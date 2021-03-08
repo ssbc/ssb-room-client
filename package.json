@@ -2,12 +2,12 @@
   "name": "ssb-room-client",
   "description": "Secret-stack plugin to interact with room servers",
   "version": "0.1.0",
-  "homepage": "https://github.com/staltz/ssb-room-client",
+  "homepage": "https://github.com/ssb-ngi-pointer/ssb-room-client",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git://github.com/staltz/ssb-room-client.git"
+    "url": "git://github.com/ssb-ngi-pointer/ssb-room-client.git"
   },
   "dependencies": {
     "debug": "^4.3.1",
