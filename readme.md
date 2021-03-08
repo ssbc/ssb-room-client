@@ -81,25 +81,6 @@ Once the Room is connected to, the `ssb-room/tunnel/client` plugin will automati
 
 **Rooms are not accounts to be followed.** Although every room server has an SSB id, this is only used for encryption through secret-handshake, and does not represent a "feed" in any sense. Your app should not display room servers as accounts, users should not assign names or profile pictures, because the room never publishes anything on SSB. If accounts follow a room, this would only pollute the social graph with no benefit.
 
-## api
-
-### accept: async
-
-Use an invite code.
-
- - invitecode (string)
-
-```bash
-accept {invitecode}
-```
-
-```js
-accept(invitecode, cb)
-```
-
-This connects to the server address encoded in the invite-code, then calls `use()` on the server.
-It will cause the server to follow the local user.
-
 ## License
 
 LGPL-3.0
