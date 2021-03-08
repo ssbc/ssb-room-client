@@ -44,7 +44,7 @@ const CreateSSB = (makeMockConn) => {
 };
 
 test('connect to room', (t) => {
-  const ssb = CreateSSB()
+  const ssb = CreateSSB();
 
   ssb.connect(`tunnel:${bobKeys.id}:${carlaKeys.id}`, (err, x) => {
     t.match(err.message, /^room @\S+ is offline$/, 'connect but offline');
@@ -231,10 +231,10 @@ test('stages other endpoints', (t) => {
 });
 
 test('when connected to a room, can tunnel.connect to others', (t) => {
-  let calledIsRoom = false
-  let calledEndpoints = false
-  let calledConnect = false
-  let calledClose = false
+  let calledIsRoom = false;
+  let calledEndpoints = false;
+  let calledConnect = false;
+  let calledClose = false;
   const ssb = CreateSSB((close) => ({
     hub: () => ({
       listen: () =>
@@ -248,7 +248,7 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
                 tunnel: {
                   isRoom(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
-                    calledIsRoom = true
+                    calledIsRoom = true;
                     cb(null, true);
                   },
                   endpoints() {
@@ -256,32 +256,97 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
                       ssb.connect(
                         `tunnel:${bobKeys.id}:${carlaKeys.id}`,
                         (err, s) => {
-                          t.ok(err, 'error, but we expected it because mocks')
+                          t.ok(err, 'error, but we expected it because mocks');
                           ssb.close(() => {
-                            t.true(calledIsRoom)
-                            t.true(calledEndpoints)
-                            t.true(calledConnect)
-                            t.true(calledClose)
-                            t.end()
-                          })
+                            t.true(calledIsRoom);
+                            t.true(calledEndpoints);
+                            t.true(calledConnect);
+                            t.true(calledClose);
+                            t.end();
+                          });
                         },
                       );
                     }, 200);
 
                     t.pass('rpc.tunnel.endpoints got called');
-                    calledEndpoints = true
+                    calledEndpoints = true;
                     return pull.values([[carlaKeys.id]]);
                   },
                   connect(addr, cb) {
-                    t.deepEqual(addr, {portal: bobKeys.id, target: carlaKeys.id})
-                    t.pass('at this point would do an actual connection')
-                    calledConnect = true
-                    return {source: pull.empty(), sink: () => {}}
+                    t.deepEqual(addr, {
+                      portal: bobKeys.id,
+                      target: carlaKeys.id,
+                    });
+                    t.pass('at this point would do an actual connection');
+                    calledConnect = true;
+                    return {source: pull.empty(), sink: () => {}};
                   },
                 },
                 close() {
-                  t.pass('calls rpc.close()')
-                  calledClose = true
+                  t.pass('calls rpc.close()');
+                  calledClose = true;
+                },
+              },
+            },
+          },
+        ]),
+    }),
+  }));
+});
+
+test('when connected to a room 2.0, can registerAlias', (t) => {
+  const ROOM_ADDR = 'net:something.com:8008~noauth';
+  const ssb = CreateSSB((close) => ({
+    hub: () => ({
+      listen: () =>
+        pull.values([
+          {
+            type: 'connected',
+            address: ROOM_ADDR,
+            key: bobKeys.id,
+            details: {
+              rpc: {
+                tunnel: {
+                  isRoom(cb) {
+                    t.pass('rpc.tunnel.isRoom got called');
+                    calledIsRoom = true;
+                    cb(null, true);
+
+                    setTimeout(() => {
+                      ssb.roomClient.registerAlias(
+                        bobKeys.id,
+                        'Alice',
+                        (err, answer) => {
+                          t.error(err);
+                          t.true(answer);
+                          ssb.close(t.end);
+                        },
+                      );
+                    }, 200);
+                  },
+                  endpoints: () => {
+                    return pull.empty();
+                  },
+                },
+
+                room: {
+                  registerAlias(alias, sig, cb) {
+                    t.equal(alias, 'Alice');
+                    t.ok(sig);
+                    const body = [
+                      '=room-alias-registration',
+                      bobKeys.id,
+                      aliceKeys.id,
+                      alias,
+                    ].join(':');
+                    t.ok(ssbKeys.verify(aliceKeys, sig, body));
+                    cb(null, true);
+                  },
+                },
+
+                close() {
+                  t.pass('calls rpc.close()');
+                  calledClose = true;
                 },
               },
             },

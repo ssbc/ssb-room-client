@@ -1,7 +1,7 @@
 import {ListenEvent} from 'ssb-conn-hub/lib/types';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
-const ref = require('ssb-ref');
+const Ref = require('ssb-ref');
 import {Callback, ConnectOpts, SSBWithConn} from './types';
 import RoomObserver from './room-observer';
 import {FeedId} from 'ssb-typescript';
@@ -91,8 +91,8 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
         if (name !== 'tunnel') return
         opts = {name, portal, target};
       }
-      if (!ref.isFeed(opts.portal)) return;
-      if (!ref.isFeed(opts.target)) return;
+      if (!Ref.isFeed(opts.portal)) return;
+      if (!Ref.isFeed(opts.target)) return;
       return opts;
     },
 

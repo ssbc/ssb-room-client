@@ -51,6 +51,11 @@ module.exports = {
           return ErrorDuplex(`could not connect to ${target}`);
         }
       },
+
+      // Internal method, needed for api-plugin.ts
+      getRoomsMap() {
+        return rooms
+      }
     };
   },
 };

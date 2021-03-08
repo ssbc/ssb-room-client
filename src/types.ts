@@ -14,6 +14,7 @@ export interface ConnectOpts {
 
 export interface SSB {
   id: FeedId;
+  keys: any;
   conn?: {
     connect: CallableFunction;
     stage: CallableFunction;
@@ -29,6 +30,9 @@ export interface SSB {
   multiserver: {
     transport: CallableFunction;
   };
+  tunnel: {
+    getRoomsMap: CallableFunction;
+  };
 }
 
 export type SSBWithConn = SSB & Required<Pick<SSB, 'conn'>>;
@@ -39,10 +43,20 @@ export interface RPC {
     connect: (opts: ConnectOpts, cb: Callback) => void;
   };
   close: CallableFunction;
+  room: {
+    registerAlias: (alias: string, sig: string, cb: Callback) => void;
+    revokeAlias: (alias: string, cb: Callback) => void;
+  };
 }
 
 export interface SSBConfig {
   path: string;
+  keys: {
+    curve: string;
+    public: string;
+    private: string;
+    id: string;
+  };
   blobsPurge?: {
     cpuMax?: number;
     storageLimit?: number;
