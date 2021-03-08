@@ -15,6 +15,11 @@ module.exports = {
   version: '1.0.0',
   manifest: {
     connect: 'duplex',
+    announce: 'sync', // not implemented
+    leave: 'sync', // not implemented
+    endpoints: 'source', // not implemented
+    isRoom: 'async', // not implemented
+    ping: 'sync', // not implemented
   },
   permissions: {
     anonymous: {allow: ['connect']},
