@@ -18,7 +18,6 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
 
     server(onConnect: (stream: any) => void, startedCB: Callback) {
       // Once a peer connects, detect rooms, and setup room portals
-      console.log('will call ssb.conn.hub.listen')
       pull(
         ssb.conn.hub().listen(),
         pull.filter(({type}: ListenEvent) => type === 'connected'),
