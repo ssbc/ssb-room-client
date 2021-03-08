@@ -1,0 +1,4 @@
+/.nyc_output
+/src
+node_modules
+pnpm-lock.yaml
