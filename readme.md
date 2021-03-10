@@ -7,7 +7,8 @@ Plugin to accept interact with SSB room servers. This is supposed to be installe
 **Prerequisites:**
 
 - Node.js 6.5.0 or higher
-- Requires secret-stack@^6.2.0
+- Requires `secret-stack@>=6.2.0`
+- Requires `ssb-keys@>=8.1.0`
 - [ssb-conn](https://github.com/staltz/ssb-conn) installed as a secret-stack plugin
 
 ```
@@ -48,7 +49,21 @@ Also, configure your [ssb-config connections](https://github.com/ssbc/ssb-config
 
 ## Usage
 
-There is no special muxrpc you need to use, instead, you just use SSB CONN's APIs to connect with Rooms and the peers online in a Room.
+This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), such as alias registration, using the following muxrpc APIs:
+
+```js
+// `roomId` is the SSB ID of the room server where you want to register an alias
+// `alias` is a string you want to be known by, e.g. "Alice"
+// `cb` will be called with 2nd arg `true` if everything succeeded
+ssb.roomClient.registerAlias(roomId, alias, cb)
+
+// `roomId` is the SSB ID of the room server where you want to revoke an alias
+// `alias` is a string you want to remove, e.g. "Alice"
+// `cb` will be called with 2nd arg `true` if everything succeeded
+ssb.roomClient.revokeAlias(roomId, alias, cb)
+```
+
+Apart from that, you just use SSB CONN's APIs to connect with Rooms and the peers online in a Room.
 
 If a Room gives the user an invite code, then you can use the **following utilities** to extract the [multiserver](https://github.com/ssbc/multiserver) `address` of the Room:
 

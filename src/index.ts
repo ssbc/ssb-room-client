@@ -1,1 +1,1 @@
-module.exports = require('./tunnel-plugin');
+module.exports = [require('./tunnel-plugin'), require('./api-plugin')];

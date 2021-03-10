@@ -15,6 +15,7 @@
     "pull-stream": "^3.6.14",
     "ssb-conn-hub": ">=0.2.0",
     "ssb-conn-staging": ">=0.1.0",
+    "ssb-keys": ">=8.1.0",
     "ssb-ref": "^2.14.3",
     "ssb-typescript": "^2.2.0"
   },
@@ -23,7 +24,6 @@
     "nyc": "^15.1.0",
     "secret-stack": "6.3.2",
     "ssb-caps": "^1.1.0",
-    "ssb-keys": "^8.0.2",
     "tap-spec": "^5.0.0",
     "tape": "^5.2.2",
     "typescript": "4.2.x"
