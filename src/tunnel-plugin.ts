@@ -18,11 +18,11 @@ module.exports = {
     announce: 'sync', // not implemented
     leave: 'sync', // not implemented
     endpoints: 'source', // not implemented
-    isRoom: 'async', // not implemented
+    isRoom: 'async',
     ping: 'sync', // not implemented
   },
   permissions: {
-    anonymous: {allow: ['connect']},
+    anonymous: {allow: ['connect', 'isRoom']},
   },
   init(ssb: SSB) {
     if (!hasConnInstalled(ssb)) {
@@ -50,6 +50,10 @@ module.exports = {
         } else {
           return ErrorDuplex(`could not connect to ${target}`);
         }
+      },
+
+      isRoom(cb) {
+        cb(null, false)
       },
 
       // Internal method, needed for api-plugin.ts
