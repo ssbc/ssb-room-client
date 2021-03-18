@@ -316,10 +316,19 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
                       ssb.roomClient.registerAlias(
                         bobKeys.id,
                         'Alice',
-                        (err, answer) => {
+                        (err, url) => {
                           t.error(err);
-                          t.true(answer);
-                          ssb.close(t.end);
+                          t.equal(url, 'alice.bobsroom.com');
+
+                          ssb.roomClient.revokeAlias(
+                            bobKeys.id,
+                            'Alice',
+                            (err2, answer) => {
+                              t.error(err2);
+                              t.true(answer);
+                              ssb.close(t.end);
+                            },
+                          );
                         },
                       );
                     }, 200);
@@ -340,6 +349,10 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
                       alias,
                     ].join(':');
                     t.ok(ssbKeys.verify(aliceKeys, sig, body));
+                    cb(null, 'alice.bobsroom.com');
+                  },
+                  revokeAlias(alias, cb) {
+                    t.equal(alias, 'Alice');
                     cb(null, true);
                   },
                 },
