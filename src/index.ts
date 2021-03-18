@@ -1,1 +1,1 @@
-module.exports = [require('./tunnel-plugin'), require('./api-plugin')];
+module.exports = [require('./plugin-tunnel'), require('./plugin-room-client')];

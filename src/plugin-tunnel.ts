@@ -4,7 +4,7 @@ const DuplexPair = require('pull-pair/duplex');
 import {ConnectOpts, SSB, SSBWithConn} from './types';
 import ErrorDuplex from './error-duplex';
 import RoomObserver from './room-observer';
-import makeTunnelPlugin from './ms-tunnel-plugin';
+import makeTunnelPlugin from './ms-tunnel';
 
 function hasConnInstalled(ssb: SSB): ssb is SSBWithConn {
   return !!ssb.conn?.connect;
