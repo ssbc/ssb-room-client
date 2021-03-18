@@ -17,7 +17,7 @@ module.exports = {
     if (!ssb.tunnel.getRoomsMap) throw new Error('missing tunnel plugin');
 
     return {
-      registerAlias(roomKey: FeedId, alias: string, cb: Callback) {
+      registerAlias(roomKey: FeedId, alias: string, cb: Callback<string>) {
         const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
         if (!Ref.isFeed(roomKey)) {
           cb(new Error(`cannot register alias at unknown room ${roomKey}`));
@@ -32,7 +32,7 @@ module.exports = {
         rooms.get(roomKey)!.rpc.room.registerAlias(alias, sig, cb);
       },
 
-      revokeAlias(roomKey: FeedId, alias: string, cb: Callback) {
+      revokeAlias(roomKey: FeedId, alias: string, cb: Callback<true>) {
         const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
         if (!Ref.isFeed(roomKey)) {
           cb(new Error(`cannot revoke alias at unknown room ${roomKey}`));
