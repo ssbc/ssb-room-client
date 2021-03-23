@@ -210,6 +210,7 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
                   endpoints() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
+                        t.doesNotMatch(err.message, /only know\:tunnel\~shs/)
                         t.ok(err, 'error, but we expected it because mocks');
                         ssb.close(() => {
                           t.true(calledIsRoom);
