@@ -1,52 +1,13 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
 const test = require('tape');
 const ssbKeys = require('ssb-keys');
-const SecretStack = require('secret-stack');
-const caps = require('ssb-caps');
 const pull = require('pull-stream');
-
-const aliceKeys = ssbKeys.generate();
-const bobKeys = ssbKeys.generate();
-const carlaKeys = ssbKeys.generate();
-
-let testInstance = 0;
-const CreateSSB = (makeMockConn) => {
-  const name = `test${testInstance}`;
-  testInstance++;
-  let sbot;
-
-  const close = (cb) => {
-    sbot.close(cb);
-  };
-
-  sbot = SecretStack({appKey: caps.shs})
-    .use(require('./mock-conn'))
-    .use(require('../lib/index'))
-    .call(null, {
-      path: fs.mkdtempSync(path.join(os.tmpdir(), 'ssb-room-client-' + name)),
-      temp: true,
-      name,
-      keys: aliceKeys,
-      connections: {
-        incoming: {
-          tunnel: [{scope: 'public', transform: 'shs'}],
-        },
-        outgoing: {
-          tunnel: [{transform: 'shs'}],
-        },
-      },
-      mockConn: makeMockConn ? makeMockConn(close) : null,
-    });
-
-  return sbot;
-};
+const {ROOM_ID, BOB_ID, ROOM_MSADDR, ALICE_ID, ALICE_KEYS} = require('./keys');
+const CreateSSB = require('./sbot');
 
 test('connect to room', (t) => {
   const ssb = CreateSSB();
 
-  ssb.connect(`tunnel:${bobKeys.id}:${carlaKeys.id}`, (err, x) => {
+  ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, x) => {
     t.match(err.message, /^room @\S+ is offline$/, 'connect but offline');
     ssb.close(t.end);
   });
@@ -59,8 +20,8 @@ test('when connected to a peer, checks if it is a room', (t) => {
         pull.values([
           {
             type: 'connected',
-            address: 'net:something.com:8008~noauth',
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -84,8 +45,8 @@ test('when connected to a non-room, does not call tunnel.endpoints', (t) => {
         pull.values([
           {
             type: 'connected',
-            address: 'net:something.com:8008~noauth',
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -113,12 +74,11 @@ test('when connected to a non-room, does not call tunnel.endpoints', (t) => {
 test('when connected to a room, updates hub and db with metadata', (t) => {
   let dbUpdated = false;
   let hubUpdated = false;
-  const ROOM_ADDR = 'net:something.com:8008~noauth';
 
   CreateSSB((close) => ({
     db: () => ({
       update: (addr, data) => {
-        t.equal(addr, ROOM_ADDR);
+        t.equal(addr, ROOM_MSADDR);
         t.deepEqual(data, {name: 'Foobar Express'});
         dbUpdated = true;
         if (hubUpdated) close(t.end);
@@ -126,7 +86,7 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
     }),
     hub: () => ({
       update: (addr, data) => {
-        t.equal(addr, ROOM_ADDR);
+        t.equal(addr, ROOM_MSADDR);
         t.deepEqual(data, {name: 'Foobar Express'});
         hubUpdated = true;
         if (dbUpdated) close(t.end);
@@ -135,8 +95,8 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
         pull.values([
           {
             type: 'connected',
-            address: ROOM_ADDR,
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -163,8 +123,8 @@ test('when connected to a room, calls tunnel.endpoints', (t) => {
         pull.values([
           {
             type: 'connected',
-            address: 'net:something.com:8008~noauth',
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -187,18 +147,14 @@ test('when connected to a room, calls tunnel.endpoints', (t) => {
 });
 
 test('stages other endpoints', (t) => {
-  const ROOM_ADDR = 'net:something.com:8008~noauth';
-
   CreateSSB((close) => ({
     stage: (addr, data) => {
-      const bob = bobKeys.id;
-      const carla = carlaKeys.id;
-      const carlaSHS = carlaKeys.id.slice(1, -8);
-      t.equal(addr, `tunnel:${bob}:${carla}~shs:${carlaSHS}`);
+      const BOB_SHS = BOB_ID.slice(1, -8);
+      t.equal(addr, `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_SHS}`);
       t.deepEqual(data, {
         type: 'room-endpoint',
-        key: carla,
-        room: bob,
+        key: BOB_ID,
+        room: ROOM_ID,
         roomName: undefined,
       });
       close(t.end);
@@ -208,8 +164,8 @@ test('stages other endpoints', (t) => {
         pull.values([
           {
             type: 'connected',
-            address: ROOM_ADDR,
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -219,7 +175,7 @@ test('stages other endpoints', (t) => {
                   },
                   endpoints: () => {
                     t.pass('rpc.tunnel.endpoints got called');
-                    return pull.values([[carlaKeys.id]]);
+                    return pull.values([[BOB_ID]]);
                   },
                 },
               },
@@ -241,8 +197,8 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
         pull.values([
           {
             type: 'connected',
-            address: 'net:something.com:8008~noauth',
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -253,29 +209,26 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
                   },
                   endpoints() {
                     setTimeout(() => {
-                      ssb.connect(
-                        `tunnel:${bobKeys.id}:${carlaKeys.id}`,
-                        (err, s) => {
-                          t.ok(err, 'error, but we expected it because mocks');
-                          ssb.close(() => {
-                            t.true(calledIsRoom);
-                            t.true(calledEndpoints);
-                            t.true(calledConnect);
-                            t.true(calledClose);
-                            t.end();
-                          });
-                        },
-                      );
+                      ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
+                        t.ok(err, 'error, but we expected it because mocks');
+                        ssb.close(() => {
+                          t.true(calledIsRoom);
+                          t.true(calledEndpoints);
+                          t.true(calledConnect);
+                          t.true(calledClose);
+                          t.end();
+                        });
+                      });
                     }, 200);
 
                     t.pass('rpc.tunnel.endpoints got called');
                     calledEndpoints = true;
-                    return pull.values([[carlaKeys.id]]);
+                    return pull.values([[BOB_ID]]);
                   },
-                  connect(addr, cb) {
+                  connect(addr) {
                     t.deepEqual(addr, {
-                      portal: bobKeys.id,
-                      target: carlaKeys.id,
+                      portal: ROOM_ID,
+                      target: BOB_ID,
                     });
                     t.pass('at this point would do an actual connection');
                     calledConnect = true;
@@ -295,15 +248,14 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
 });
 
 test('when connected to a room 2.0, can registerAlias', (t) => {
-  const ROOM_ADDR = 'net:something.com:8008~noauth';
   const ssb = CreateSSB((close) => ({
     hub: () => ({
       listen: () =>
         pull.values([
           {
             type: 'connected',
-            address: ROOM_ADDR,
-            key: bobKeys.id,
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
             details: {
               rpc: {
                 tunnel: {
@@ -314,14 +266,14 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
 
                     setTimeout(() => {
                       ssb.roomClient.registerAlias(
-                        bobKeys.id,
+                        ROOM_ID,
                         'Alice',
                         (err, url) => {
                           t.error(err);
-                          t.equal(url, 'alice.bobsroom.com');
+                          t.equal(url, 'alice.room.com');
 
                           ssb.roomClient.revokeAlias(
-                            bobKeys.id,
+                            ROOM_ID,
                             'Alice',
                             (err2, answer) => {
                               t.error(err2);
@@ -344,12 +296,12 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
                     t.ok(sig);
                     const body = [
                       '=room-alias-registration',
-                      bobKeys.id,
-                      aliceKeys.id,
+                      ROOM_ID,
+                      ALICE_ID,
                       alias,
                     ].join(':');
-                    t.ok(ssbKeys.verify(aliceKeys, sig, body));
-                    cb(null, 'alice.bobsroom.com');
+                    t.ok(ssbKeys.verify(ALICE_KEYS, sig, body));
+                    cb(null, 'alice.room.com');
                   },
                   revokeAlias(alias, cb) {
                     t.equal(alias, 'Alice');
