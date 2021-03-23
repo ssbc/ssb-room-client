@@ -15,11 +15,13 @@ module.exports = {
   version: '1.0.0',
   manifest: {
     connect: 'duplex',
-    announce: 'sync', // not implemented
-    leave: 'sync', // not implemented
-    endpoints: 'source', // not implemented
-    isRoom: 'async', // not implemented
-    ping: 'sync', // not implemented
+    // The following are not implemented client-side but need to be declared
+    // in the manifest in order for muxrpc to allow them to be called remotely:
+    announce: 'sync',
+    leave: 'sync',
+    endpoints: 'source',
+    isRoom: 'async',
+    ping: 'sync',
   },
   permissions: {
     anonymous: {allow: ['connect']},
