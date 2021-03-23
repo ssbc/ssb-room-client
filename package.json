@@ -22,6 +22,7 @@
   "devDependencies": {
     "@types/node": "^11.10.4",
     "nyc": "^15.1.0",
+    "pull-notify": "^0.1.1",
     "secret-stack": "6.3.2",
     "ssb-caps": "^1.1.0",
     "tap-spec": "^5.0.0",

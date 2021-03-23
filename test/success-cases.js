@@ -1,7 +1,15 @@
 const test = require('tape');
 const ssbKeys = require('ssb-keys');
 const pull = require('pull-stream');
-const {ROOM_ID, BOB_ID, ROOM_MSADDR, ALICE_ID, ALICE_KEYS} = require('./keys');
+const Notify = require('pull-notify');
+const {
+  ROOM_ID,
+  BOB_ID,
+  ROOM_MSADDR,
+  ALICE_ID,
+  ALICE_KEYS,
+  BOB_KEYS,
+} = require('./keys');
 const CreateSSB = require('./sbot');
 
 test('connect to room', (t) => {
@@ -210,7 +218,7 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
                   endpoints() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
-                        t.doesNotMatch(err.message, /only know\:tunnel\~shs/)
+                        t.doesNotMatch(err.message, /only know\:tunnel\~shs/);
                         t.ok(err, 'error, but we expected it because mocks');
                         ssb.close(() => {
                           t.true(calledIsRoom);
@@ -320,4 +328,93 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
         ]),
     }),
   }));
+});
+
+test('can consumeAlias on any room', (t) => {
+  let calledIsRoom = false;
+  const expected = [ROOM_MSADDR, `tunnel:${ROOM_ID}:${BOB_ID}`];
+  const hubEvents = Notify();
+
+  function onConnectedToRoom(cb) {
+    const roomRpc = {
+      tunnel: {
+        connect({portal, target, origin}, cb) {
+          t.true(calledIsRoom);
+          t.equal(portal, ROOM_ID);
+          t.equal(target, BOB_ID);
+          t.equal(origin, ALICE_ID);
+        },
+        isRoom(cb) {
+          t.pass('rpc.tunnel.isRoom got called');
+          calledIsRoom = true;
+          cb(null, true);
+        },
+        endpoints: () => {
+          return pull.empty();
+        },
+      },
+    };
+    cb(null, roomRpc);
+
+    hubEvents({
+      type: 'connected',
+      address: ROOM_MSADDR,
+      key: ROOM_ID,
+      details: {
+        rpc: roomRpc,
+      },
+    });
+  }
+
+  function onConnectedToBob(cb) {
+    const bobRpc = {
+      dummy: {
+        whoami(cb2) {
+          cb2(null, 'I am bob');
+        },
+      },
+    };
+    cb(null, bobRpc);
+  }
+
+  const ssb = CreateSSB((close) => ({
+    hub: () => ({
+      listen: () => hubEvents.listen(),
+    }),
+    connect(addr, data, cb) {
+      if (!cb) cb = data;
+      t.equal(addr, expected.shift(), `connect to ${addr}`);
+      if (addr === ROOM_MSADDR) {
+        onConnectedToRoom(cb);
+      } else {
+        onConnectedToBob(cb);
+      }
+    },
+  }));
+
+  setTimeout(() => {
+    const body = `=room-alias-registration:${ROOM_ID}:${BOB_ID}:bob`;
+    const signature = ssbKeys.sign(BOB_KEYS, body);
+
+    const opts = {
+      address: ROOM_MSADDR,
+      roomId: ROOM_ID,
+      userId: BOB_ID,
+      alias: 'bob',
+      signature: signature,
+    };
+
+    ssb.roomClient.consumeAlias(opts, (err, rpc) => {
+      t.error(err, 'no error');
+
+      rpc.dummy.whoami((err2, answer) => {
+        t.error(err2, 'no error');
+        t.equals(answer, 'I am bob');
+
+        ssb.close(() => {
+          t.end();
+        });
+      });
+    });
+  }, 200);
 });

@@ -49,7 +49,7 @@ Also, configure your [ssb-config connections](https://github.com/ssbc/ssb-config
 
 ## Usage
 
-This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), such as alias registration, using the following muxrpc APIs:
+This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), such as alias registration and consumption, using the following muxrpc APIs:
 
 ```js
 // `roomId` is the SSB ID of the room server where you want to register an alias
@@ -61,6 +61,15 @@ ssb.roomClient.registerAlias(roomId, alias, cb)
 // `alias` is a string you want to remove, e.g. "Alice"
 // `cb` will be called with 2nd arg `true` if everything succeeded
 ssb.roomClient.revokeAlias(roomId, alias, cb)
+
+// `opts` is an object and needs all of the following fields:
+//   * address: string
+//   * roomId: string
+//   * userId: string
+//   * alias: string
+//   * signature: string
+// `cb` is called with the 2nd arg `rpc` (of the alias' peer) if succeeded
+ssb.roomClient.consumeAlias(opts, cb)
 ```
 
 Apart from that, you just use SSB CONN's APIs to connect with Rooms and the peers online in a Room.
