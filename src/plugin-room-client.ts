@@ -28,6 +28,7 @@ module.exports = {
   manifest: {
     registerAlias: 'async',
     revokeAlias: 'async',
+    consumeAliasUri: 'async',
     consumeAlias: 'async',
   },
   permissions: {
