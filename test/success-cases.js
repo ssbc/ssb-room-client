@@ -257,6 +257,84 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
   }));
 });
 
+test('can consumeInviteUri given an HTTP URL', (t) => {
+  const INVITECODE = '123abc';
+  const ssb = CreateSSB((close) => ({}));
+
+  // Launch mock server to host the alias details
+  const ctx = server({port: 3000, security: {csrf: false}}, [
+    server.router.get('/join', (ctx) => {
+      t.equals(ctx.query.invite, INVITECODE);
+      t.equals(ctx.query.encoding, 'json');
+      return {
+        status: 'successful',
+        invite: INVITECODE,
+        postTo: 'http://localhost:3000/claiminvite',
+      };
+    }),
+    server.router.post('/claiminvite', (ctx) => ({
+      multiserverAddress: ROOM_MSADDR,
+    })),
+  ]);
+
+  setTimeout(() => {
+    const url = `http://localhost:3000/join?invite=${INVITECODE}`;
+    ssb.roomClient.consumeInviteUri(url, (err, msaddr) => {
+      t.error(err, 'no error');
+      t.equals(msaddr, ROOM_MSADDR);
+
+      ctx
+        .then(({close}) => close())
+        .then(() => {
+          ssb.close(() => {
+            t.end();
+          });
+        });
+    });
+  }, 200);
+});
+
+test('can consumeInviteUri given an SSB URI', (t) => {
+  const INVITECODE = '123abc';
+
+  const ssb = CreateSSB((close) => ({}));
+
+  // Launch mock server to host the alias details
+  const ctx = server({port: 3000, security: {csrf: false}}, [
+    server.router.get('/join', (ctx) => {
+      t.fail('should not request /join endpoint');
+      return {};
+    }),
+    server.router.post('/claiminvite', (ctx) => ({
+      multiserverAddress: ROOM_MSADDR,
+    })),
+  ]);
+
+  setTimeout(() => {
+    const submissionUrl = 'http://localhost:3000/claiminvite';
+    const ssbUri =
+      'ssb:experimental?' +
+      [
+        'action=join-room',
+        'invite=' + encodeURIComponent(INVITECODE),
+        'postTo=' + encodeURIComponent(submissionUrl),
+      ].join('&');
+
+    ssb.roomClient.consumeInviteUri(ssbUri, (err, msaddr) => {
+      t.error(err, 'no error');
+      t.equals(msaddr, ROOM_MSADDR);
+
+      ctx
+        .then(({close}) => close())
+        .then(() => {
+          ssb.close(() => {
+            t.end();
+          });
+        });
+    });
+  }, 200);
+});
+
 test('when connected to a room 2.0, can registerAlias', (t) => {
   const ssb = CreateSSB((close) => ({
     hub: () => ({

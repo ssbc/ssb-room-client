@@ -49,9 +49,15 @@ Also, configure your [ssb-config connections](https://github.com/ssbc/ssb-config
 
 ## Usage
 
-This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), such as alias registration and consumption, using the following muxrpc APIs:
+This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), such as invite consumption, alias registration and alias consumption, using the following muxrpc APIs:
 
 ```js
+// `uri` is a string, either an HTTP URL or an SSB URI:
+//   * `https://myroom.com/join?invite=123abc`
+//   * `ssb:experimental?action=join-room&invite=123abc&postTo=anotherUrl`
+// `cb` is called with 2nd arg `multiserverAddress` (for the room) if succeeded
+ssb.roomClient.consumeInviteUri(uri, cb)
+
 // `roomId` is the SSB ID of the room server where you want to register an alias
 // `alias` is a string you want to be known by, e.g. "Alice"
 // `cb` will be called with 2nd arg `true` if everything succeeded
