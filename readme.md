@@ -62,6 +62,13 @@ ssb.roomClient.registerAlias(roomId, alias, cb)
 // `cb` will be called with 2nd arg `true` if everything succeeded
 ssb.roomClient.revokeAlias(roomId, alias, cb)
 
+// `uri` is a string, either an HTTP URL or an SSB URI:
+//   * `https://alice.room.com`
+//   * `ssb:experimental?action=consume-alias&roomId=R&userId=U&.......`
+// `cb` is called with the 2nd arg `rpc` (of the alias' peer) if succeeded
+ssb.roomClient.consumeAliasUri(uri, cb)
+
+// Low-level alternative to the above
 // `opts` is an object and needs all of the following fields:
 //   * address: string
 //   * roomId: string

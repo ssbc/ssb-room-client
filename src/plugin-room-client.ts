@@ -1,8 +1,14 @@
 import {FeedId} from 'ssb-typescript';
-import RoomObserver from './room-observer';
-import {Callback, SSBConfig, SSBWithConn} from './types';
 const Ref = require('ssb-ref');
 const ssbKeys = require('ssb-keys');
+import RoomObserver from './room-observer';
+import {Callback, SSBConfig, SSBWithConn} from './types';
+import {makeRequest} from '@minireq/node';
+
+const minireq: ReturnType<typeof makeRequest> =
+  typeof window !== 'undefined'
+    ? require('@minireq/browser').makeRequest()
+    : require('@minireq/node').makeRequest();
 
 interface ConsumeOpts {
   address: string;
@@ -11,6 +17,10 @@ interface ConsumeOpts {
   alias: string;
   signature: string;
 }
+
+type NullPartial<T> = {
+  [P in keyof T]: T[P] | null;
+};
 
 module.exports = {
   name: 'roomClient',
@@ -26,7 +36,7 @@ module.exports = {
   init(ssb: SSBWithConn, config: SSBConfig) {
     if (!ssb.tunnel.getRoomsMap) throw new Error('missing tunnel plugin');
 
-    return {
+    const self = {
       registerAlias(roomKey: FeedId, alias: string, cb: Callback<string>) {
         const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
         if (!Ref.isFeed(roomKey)) {
@@ -55,7 +65,75 @@ module.exports = {
         rooms.get(roomKey)!.rpc.room.revokeAlias(alias, cb);
       },
 
-      consumeAlias(opts: ConsumeOpts, cb: Callback<any>) {
+      async consumeAliasUri(input: string, cb: Callback<any>) {
+        if (!input) {
+          cb(new Error('missing URI input'));
+          return;
+        }
+        if (typeof input !== 'string') {
+          cb(new Error('URI input should be a string'));
+          return;
+        }
+        let url: URL;
+        try {
+          const coolURL = /^(\w+\.\w+\.\w+|\w+\.\w+\/\w+)$/;
+          if (input.match(coolURL)) { // `alice.room.com` or `room.com/alice`
+            url = new URL(`https://${input}`);
+          } else {
+            url = new URL(input);
+          }
+        } catch (err) {
+          cb(err);
+          return;
+        }
+
+        if (url.protocol.startsWith('http')) {
+          url.searchParams.set('encoding', 'json');
+          const jsonUrl = url.toString();
+          try {
+            const {status, data} = await minireq({
+              url: jsonUrl,
+              method: 'GET',
+              accept: 'application/json',
+              timeout: 10e3,
+            }).promise;
+            if (status >= 200 && status < 300) {
+              self.consumeAlias(data, cb);
+            } else {
+              cb(new Error(`failed (${status}) to get alias from ${jsonUrl}`));
+              return;
+            }
+          } catch (err) {
+            cb(err);
+            return;
+          }
+        } else if (url.protocol === 'ssb:') {
+          if (url.pathname !== 'experimental' && url.host !== 'experimental') {
+            cb(new Error('SSB URI input isnt experimental'));
+            return;
+          }
+          const action = url.searchParams.get('action');
+          if (action !== 'consume-alias') {
+            cb(new Error(`SSB URI input isnt consume-alias: ${input}`));
+            return;
+          }
+          self.consumeAlias(
+            {
+              address: url.searchParams.get('address'),
+              roomId: url.searchParams.get('roomId'),
+              userId: url.searchParams.get('userId'),
+              alias: url.searchParams.get('alias'),
+              signature: url.searchParams.get('signature'),
+            },
+            cb,
+          );
+        } else {
+          cb(new Error(`unsupported URI input: ${input}`));
+          return;
+        }
+      },
+
+      consumeAlias(opts: NullPartial<ConsumeOpts>, cb: Callback<any>) {
         if (!Ref.isAddress(opts.address)) {
           cb(new Error(`cannot consumeAlias with address: ${opts.address}`));
           return;
@@ -77,7 +155,13 @@ module.exports = {
           return;
         }
 
-        const {address, roomId, userId, alias, signature} = opts;
+        const {
+          address,
+          roomId,
+          userId,
+          alias,
+          signature,
+        } = opts as Required<ConsumeOpts>;
 
         const body = `=room-alias-registration:${roomId}:${userId}:${alias}`;
         const ok = ssbKeys.verify(userId, signature, body);
@@ -97,7 +181,7 @@ module.exports = {
 
           if (!rooms.has(roomId)) {
             if (period < 8000) setTimeout(tryAgain, (period = period * 2));
-            else cb(new Error('cannot connect to alias owner via the room'))
+            else cb(new Error('cannot connect to alias owner via the room'));
             return;
           }
 
@@ -114,5 +198,7 @@ module.exports = {
         });
       },
     };
+
+    return self;
   },
 };
