@@ -99,16 +99,15 @@ module.exports = {
               accept: 'application/json',
               timeout: 10e3,
             }).promise;
-            if (status >= 200 && status < 300) {
-              if (data.status !== 'successful') {
-                cb(new Error(data.error))
-                return
-              }
-              self.consumeAlias(data, cb);
-            } else {
+            if (!(status >= 200 && status < 300)) {
               cb(new Error(`failed (${status}) to get alias from ${jsonUrl}`));
               return;
             }
+            if (data.status !== 'successful') {
+              cb(new Error(data.error));
+              return;
+            }
+            self.consumeAlias(data, cb);
           } catch (err) {
             cb(err);
             return;
