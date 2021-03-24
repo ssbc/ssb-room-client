@@ -398,7 +398,7 @@ test('can consumeAlias on any room', (t) => {
     const signature = ssbKeys.sign(BOB_KEYS, body);
 
     const opts = {
-      address: ROOM_MSADDR,
+      multiserverAddress: ROOM_MSADDR,
       roomId: ROOM_ID,
       userId: BOB_ID,
       alias: 'bob',
@@ -485,7 +485,7 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
   // Launch mock server to host the alias details
   const ctx = server({port: 3000}, [
     server.router.get('/bob', (ctx) => ({
-      address: ROOM_MSADDR,
+      multiserverAddress: ROOM_MSADDR,
       roomId: ROOM_ID,
       userId: BOB_ID,
       alias: 'bob',
@@ -583,7 +583,7 @@ test('can consumeAliasUri given an SSB URI', (t) => {
       'ssb:experimental?' +
       [
         'action=consume-alias',
-        'address=' + encodeURIComponent(ROOM_MSADDR),
+        'multiserverAddress=' + encodeURIComponent(ROOM_MSADDR),
         'roomId=' + encodeURIComponent(ROOM_ID),
         'userId=' + encodeURIComponent(BOB_ID),
         'alias=' + 'bob',

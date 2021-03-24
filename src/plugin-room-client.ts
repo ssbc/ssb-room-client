@@ -11,7 +11,7 @@ const minireq: ReturnType<typeof makeRequest> =
     : require('@minireq/node').makeRequest();
 
 interface ConsumeOpts {
-  address: string;
+  multiserverAddress: string;
   roomId: string;
   userId: string;
   alias: string;
@@ -77,7 +77,8 @@ module.exports = {
         let url: URL;
         try {
           const coolURL = /^(\w+\.\w+\.\w+|\w+\.\w+\/\w+)$/;
-          if (input.match(coolURL)) { // `alice.room.com` or `room.com/alice`
+          if (input.match(coolURL)) {
+            // `alice.room.com` or `room.com/alice`
             url = new URL(`https://${input}`);
           } else {
             url = new URL(input);
@@ -119,7 +120,7 @@ module.exports = {
           }
           self.consumeAlias(
             {
-              address: url.searchParams.get('address'),
+              multiserverAddress: url.searchParams.get('multiserverAddress'),
               roomId: url.searchParams.get('roomId'),
               userId: url.searchParams.get('userId'),
               alias: url.searchParams.get('alias'),
@@ -134,29 +135,29 @@ module.exports = {
       },
 
       consumeAlias(opts: NullPartial<ConsumeOpts>, cb: Callback<any>) {
-        if (!Ref.isAddress(opts.address)) {
-          cb(new Error(`cannot consumeAlias with address: ${opts.address}`));
+        if (!Ref.isAddress(opts.multiserverAddress)) {
+          cb(new Error(`bad multiserverAddress: ${opts.multiserverAddress}`));
           return;
         }
         if (!Ref.isFeed(opts.roomId)) {
-          cb(new Error(`cannot consumeAlias with bad roomId: ${opts.roomId}`));
+          cb(new Error(`bad roomId: ${opts.roomId}`));
           return;
         }
         if (!Ref.isFeed(opts.userId)) {
-          cb(new Error(`cannot consumeAlias with bad userId: ${opts.userId}`));
+          cb(new Error(`bad userId: ${opts.userId}`));
           return;
         }
         if (!opts.alias || typeof opts.alias !== 'string') {
-          cb(new Error(`cannot consumeAlias with alias: ${opts.alias}`));
+          cb(new Error(`bad alias: ${opts.alias}`));
           return;
         }
         if (!opts.signature || typeof opts.signature !== 'string') {
-          cb(new Error(`cannot consumeAlias signed as: ${opts.signature}`));
+          cb(new Error(`bad signature: ${opts.signature}`));
           return;
         }
 
         const {
-          address,
+          multiserverAddress,
           roomId,
           userId,
           alias,
@@ -173,7 +174,7 @@ module.exports = {
         const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
 
         let period = 32; // milliseconds
-        ssb.conn.connect(address, function tryAgain(err: any) {
+        ssb.conn.connect(multiserverAddress, function tryAgain(err: any) {
           if (err) {
             cb(err);
             return;
