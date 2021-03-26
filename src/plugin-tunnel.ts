@@ -24,7 +24,7 @@ module.exports = {
     ping: 'sync',
   },
   permissions: {
-    anonymous: {allow: ['connect']},
+    anonymous: {allow: ['connect', 'ping']},
   },
   init(ssb: SSB) {
     if (!hasConnInstalled(ssb)) {
