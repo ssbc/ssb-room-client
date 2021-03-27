@@ -54,6 +54,7 @@ module.exports = {
         }
       },
 
+      // Needed due to https://github.com/ssb-ngi-pointer/ssb-room-client/pull/3#issuecomment-808322434
       ping() {
         return Date.now()
       },
