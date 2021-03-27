@@ -15,16 +15,16 @@ module.exports = {
   version: '1.0.0',
   manifest: {
     connect: 'duplex',
+    ping: 'sync',
     // The following are not implemented client-side but need to be declared
     // in the manifest in order for muxrpc to allow them to be called remotely:
     announce: 'sync',
     leave: 'sync',
     endpoints: 'source',
     isRoom: 'async',
-    ping: 'sync',
   },
   permissions: {
-    anonymous: {allow: ['connect']},
+    anonymous: {allow: ['connect', 'ping']},
   },
   init(ssb: SSB) {
     if (!hasConnInstalled(ssb)) {
@@ -52,6 +52,10 @@ module.exports = {
         } else {
           return ErrorDuplex(`could not connect to ${target}`);
         }
+      },
+
+      ping() {
+        return Date.now()
       },
 
       // Internal method, needed for api-plugin.ts
