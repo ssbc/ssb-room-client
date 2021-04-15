@@ -104,9 +104,11 @@ module.exports = {
         alias,
         signature,
       } = opts as Required<ConsumeOpts>;
+      // Let's assume that `signature` is Base64 RFC 4648
+      const sig = signature.replace(/_/g, '/').replace(/-/g, '+');
 
       const body = `=room-alias-registration:${roomId}:${userId}:${alias}`;
-      const ok = ssbKeys.verify(userId, signature, body);
+      const ok = ssbKeys.verify(userId, sig, body);
       if (!ok) {
         cb(new Error(`cannot consumedAlias because the signature is wrong`));
         return;
