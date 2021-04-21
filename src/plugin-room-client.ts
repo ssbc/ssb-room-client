@@ -129,7 +129,7 @@ module.exports = {
           return;
         }
         ssb.conn.connect(
-          `tunnel:${roomId}:${userId}`,
+          `tunnel:${roomId}:${userId}~shs:${userId.slice(1,-8)}`,
           (err2: any, aliasRpc: any) => {
             if (err2) {
               cb(err2);

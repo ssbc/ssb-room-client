@@ -411,7 +411,10 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
 
 test('can consumeAliasUri given an HTTP URL', (t) => {
   let calledIsRoom = false;
-  const expected = [ROOM_MSADDR, `tunnel:${ROOM_ID}:${BOB_ID}`];
+  const expected = [
+    ROOM_MSADDR,
+    `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`,
+  ];
   const hubEvents = Notify();
 
   function onConnectedToRoom(cb) {
@@ -507,7 +510,10 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
 
 test('can consumeAliasUri given an SSB URI', (t) => {
   let calledIsRoom = false;
-  const expected = [ROOM_MSADDR, `tunnel:${ROOM_ID}:${BOB_ID}`];
+  const expected = [
+    ROOM_MSADDR,
+    `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`,
+  ];
   const hubEvents = Notify();
 
   function onConnectedToRoom(cb) {
