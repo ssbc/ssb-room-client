@@ -29,7 +29,7 @@ module.exports = {
   name: 'roomClient',
   version: '1.0.0',
   manifest: {
-    consumeInviteUri: 'async',
+    claimInviteUri: 'async',
     consumeAliasUri: 'async',
     registerAlias: 'async',
     revokeAlias: 'async',
@@ -144,7 +144,7 @@ module.exports = {
       });
     }
 
-    async function consumeInviteUri(input: string, cb: Callback<string>) {
+    async function claimInviteUri(input: string, cb: Callback<string>) {
       if (!input) {
         cb(new Error('missing URI input'));
         return;
@@ -326,7 +326,7 @@ module.exports = {
     }
 
     return {
-      consumeInviteUri,
+      claimInviteUri,
       consumeAliasUri,
       registerAlias,
       revokeAlias,
