@@ -2,7 +2,7 @@ const {isAddress} = require('ssb-ref');
 
 const SEED = 'SSB+Room+PSK3TLYC2T86EHQCUHBUHASCASE18JBV24=';
 
-function isInvite(invite: any) {
+function isOpenRoomInvite(invite: any) {
   if (typeof invite !== 'string') return false;
   if (!invite) return false;
   if (!invite.endsWith(':' + SEED)) return false;
@@ -12,17 +12,17 @@ function isInvite(invite: any) {
   return true;
 }
 
-function addressToInvite(addr: any) {
-  return typeof addr === 'string' ? `${addr}:${SEED}` : null
+function addressToOpenRoomInvite(addr: any) {
+  return typeof addr === 'string' ? `${addr}:${SEED}` : null;
 }
 
-function inviteToAddress(invite: any) {
-  return isInvite(invite) ? invite.split(':' + SEED)[0] : null;
+function openRoomInviteToAddress(invite: any) {
+  return isOpenRoomInvite(invite) ? invite.split(':' + SEED)[0] : null;
 }
 
 module.exports = {
   SEED,
-  isInvite,
-  addressToInvite,
-  inviteToAddress,
+  isOpenRoomInvite,
+  addressToOpenRoomInvite,
+  openRoomInviteToAddress,
 };

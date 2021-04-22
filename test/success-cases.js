@@ -257,7 +257,7 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
   }));
 });
 
-test('can consumeInviteUri given an HTTP URL', (t) => {
+test('can claimInviteUri given an HTTP URL', (t) => {
   const INVITECODE = '123abc';
   const ssb = CreateSSB((close) => ({}));
 
@@ -279,7 +279,7 @@ test('can consumeInviteUri given an HTTP URL', (t) => {
 
   setTimeout(() => {
     const url = `http://localhost:3000/join?invite=${INVITECODE}`;
-    ssb.roomClient.consumeInviteUri(url, (err, msaddr) => {
+    ssb.roomClient.claimInviteUri(url, (err, msaddr) => {
       t.error(err, 'no error');
       t.equals(msaddr, ROOM_MSADDR);
 
@@ -294,7 +294,7 @@ test('can consumeInviteUri given an HTTP URL', (t) => {
   }, 200);
 });
 
-test('can consumeInviteUri given an SSB URI', (t) => {
+test('can claimInviteUri given an SSB URI', (t) => {
   const INVITECODE = '123abc';
 
   const ssb = CreateSSB((close) => ({}));
@@ -315,12 +315,12 @@ test('can consumeInviteUri given an SSB URI', (t) => {
     const ssbUri =
       'ssb:experimental?' +
       [
-        'action=join-room',
+        'action=claim-http-invite',
         'invite=' + encodeURIComponent(INVITECODE),
         'postTo=' + encodeURIComponent(submissionUrl),
       ].join('&');
 
-    ssb.roomClient.consumeInviteUri(ssbUri, (err, msaddr) => {
+    ssb.roomClient.claimInviteUri(ssbUri, (err, msaddr) => {
       t.error(err, 'no error');
       t.equals(msaddr, ROOM_MSADDR);
 
