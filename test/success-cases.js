@@ -315,7 +315,7 @@ test('can consumeInviteUri given an SSB URI', (t) => {
     const ssbUri =
       'ssb:experimental?' +
       [
-        'action=join-room',
+        'action=claim-http-invite',
         'invite=' + encodeURIComponent(INVITECODE),
         'postTo=' + encodeURIComponent(submissionUrl),
       ].join('&');

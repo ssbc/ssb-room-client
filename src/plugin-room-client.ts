@@ -22,6 +22,9 @@ type NullPartial<T> = {
   [P in keyof T]: T[P] | null;
 };
 
+const INVITE_URI_ACTION = 'claim-http-invite';
+const ALIAS_URI_ACTION = 'consume-alias';
+
 module.exports = {
   name: 'roomClient',
   version: '1.0.0',
@@ -129,7 +132,7 @@ module.exports = {
           return;
         }
         ssb.conn.connect(
-          `tunnel:${roomId}:${userId}~shs:${userId.slice(1,-8)}`,
+          `tunnel:${roomId}:${userId}~shs:${userId.slice(1, -8)}`,
           (err2: any, aliasRpc: any) => {
             if (err2) {
               cb(err2);
@@ -198,8 +201,8 @@ module.exports = {
           return;
         }
         const action = url.searchParams.get('action');
-        if (action !== 'join-room') {
-          cb(new Error(`SSB URI input isnt join-room: ${input}`));
+        if (action !== INVITE_URI_ACTION) {
+          cb(new Error(`SSB URI input isnt ${INVITE_URI_ACTION}: ${input}`));
           return;
         }
 
@@ -272,8 +275,8 @@ module.exports = {
           return;
         }
         const action = url.searchParams.get('action');
-        if (action !== 'consume-alias') {
-          cb(new Error(`SSB URI input isnt consume-alias: ${input}`));
+        if (action !== ALIAS_URI_ACTION) {
+          cb(new Error(`SSB URI input isnt ${ALIAS_URI_ACTION}: ${input}`));
           return;
         }
         const data = {
