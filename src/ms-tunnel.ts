@@ -88,7 +88,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
         opts = addr;
       } else {
         const [name, portal, target] = addr.split(':');
-        if (name !== 'tunnel') return
+        if (name !== 'tunnel') return;
         opts = {name, portal, target};
       }
       if (!Ref.isFeed(opts.portal)) return;

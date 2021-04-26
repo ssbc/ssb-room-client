@@ -9,7 +9,7 @@ export default class RoomObserver {
   private readonly ssb: SSB & Required<Pick<SSB, 'conn'>>;
   private readonly roomKey: FeedId;
   private readonly address: string;
-  private readonly roomMetadata: Record<string, any>;
+  private readonly roomMetadata: {name?: string};
   private endpointsDrain?: {abort: () => void};
 
   constructor(
@@ -34,7 +34,7 @@ export default class RoomObserver {
       onConnect(stream);
     };
 
-    const roomName = this.roomMetadata && this.roomMetadata.name;
+    const roomName = this.roomMetadata?.name;
     if (roomName) {
       this.ssb.conn.db().update(this.address, {name: roomName});
       this.ssb.conn.hub().update(this.address, {name: roomName});
