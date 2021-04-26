@@ -76,10 +76,10 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
 
       const rpc = rooms.get(portal)!.rpc;
       debug(`will call tunnel.connect at ${target} via room ${portal}`);
-      cb(
-        null,
-        rpc.tunnel.connect({target, portal}, () => {}),
-      );
+      const duplex = rpc.tunnel.connect({target, portal}, (err) => {
+        if (err) debug(`failed to establish tunnel duplex because ${err}`);
+      });
+      cb(null, duplex);
     },
 
     parse(addr: string | ConnectOpts) {
