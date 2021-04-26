@@ -77,7 +77,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
       const rpc = rooms.get(portal)!.rpc;
       debug(`will call tunnel.connect at ${target} via room ${portal}`);
       const duplex = rpc.tunnel.connect({target, portal}, (err) => {
-        if (err) debug(`failed to establish tunnel duplex because ${err}`);
+        if (err) debug('failed to establish tunnel duplex because %o', err);
       });
       cb(null, duplex);
     },

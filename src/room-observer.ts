@@ -147,7 +147,7 @@ export default class RoomObserver {
       }
     }
     this.rpc.close(true, (err: any) => {
-      if (err) debug('error when closing connection with room: %s', err);
+      if (err) debug('error when closing connection with room: %o', err);
     });
     this.ssb.conn.disconnect(this.address, () => {});
   }
