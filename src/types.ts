@@ -17,6 +17,7 @@ export interface SSB {
   keys: any;
   conn?: {
     connect: CallableFunction;
+    disconnect: CallableFunction;
     stage: CallableFunction;
     unstage: CallableFunction;
     db: () => {update: CallableFunction};
