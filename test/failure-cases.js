@@ -168,6 +168,71 @@ test('cannot tunnel.connect to bad tunnel address 3', (t) => {
   }));
 });
 
+test('when fails to create tunnel.connect duplex stream', (t) => {
+  let calledIsRoom = false;
+  let calledEndpoints = false;
+  let calledConnect = false;
+  let calledClose = false;
+  const ssb = CreateSSB((close) => ({
+    hub: () => ({
+      listen: () =>
+        pull.values([
+          {
+            type: 'connected',
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
+            details: {
+              rpc: {
+                tunnel: {
+                  isRoom(cb) {
+                    t.pass('rpc.tunnel.isRoom got called');
+                    calledIsRoom = true;
+                    cb(null, true);
+                  },
+                  endpoints() {
+                    setTimeout(() => {
+                      ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
+                        t.ok(err, 'error, but we expected it');
+                        t.match(err.message, /foobar/);
+                        ssb.close(() => {
+                          t.true(calledIsRoom);
+                          t.true(calledEndpoints);
+                          t.true(calledConnect);
+                          t.true(calledClose);
+                          t.end();
+                        });
+                      });
+                    }, 200);
+
+                    t.pass('rpc.tunnel.endpoints got called');
+                    calledEndpoints = true;
+                    return pull.values([[BOB_ID]]);
+                  },
+                  connect(addr) {
+                    t.deepEqual(addr, {
+                      portal: ROOM_ID,
+                      target: BOB_ID,
+                    });
+                    t.pass('at this point would do an actual connection');
+                    calledConnect = true;
+                    return {
+                      source: pull.error(new Error('foobar')),
+                      sink: () => {},
+                    };
+                  },
+                },
+                close() {
+                  t.pass('calls rpc.close()');
+                  calledClose = true;
+                },
+              },
+            },
+          },
+        ]),
+    }),
+  }));
+});
+
 test('bad ConnHub listen event', (t) => {
   let calledIsRoom = false;
   const ssb = CreateSSB((close) => ({
