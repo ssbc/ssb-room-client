@@ -116,7 +116,7 @@ export default class RoomObserver {
           } else {
             // pre-emptively destroy the stream, assuming the other
             // end is packet-stream 2.0.0 sending end messages.
-            // this.close(); // FIXME: enable this?
+            this.close();
           }
         }
       } else {
