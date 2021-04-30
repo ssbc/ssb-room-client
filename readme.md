@@ -2,6 +2,8 @@
 
 Plugin to accept interact with SSB room servers. This is supposed to be installed and used on **apps** that make remote calls to servers, thus _clients_.
 
+Note, some rooms may have additional features such as Sign-in with SSB and HTTP invites, so it may be worth installing also [ssb-http-auth-client](https://github.com/staltz/ssb-http-auth-client) and [ssb-http-invite-client](https://github.com/staltz/ssb-http-invite-client).
+
 ## Installation
 
 **Prerequisites:**
@@ -49,15 +51,9 @@ Also, configure your [ssb-config connections](https://github.com/ssbc/ssb-config
 
 ## Usage
 
-This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), such as invite consumption, alias registration and alias consumption, using the following muxrpc APIs:
+This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), alias registration and alias consumption, using the following muxrpc APIs:
 
 ```js
-// `uri` is a string, either an HTTP URL or an SSB URI:
-//   * `https://myroom.com/join?invite=123abc`
-//   * `ssb:experimental?action=join-room&invite=123abc&postTo=anotherUrl`
-// `cb` is called with 2nd arg `multiserverAddress` (for the room) if succeeded
-ssb.roomClient.claimInviteUri(uri, cb)
-
 // `uri` is a string, either an HTTP URL or an SSB URI:
 //   * `https://alice.room.com`
 //   * `ssb:experimental?action=consume-alias&roomId=R&userId=U&.......`
