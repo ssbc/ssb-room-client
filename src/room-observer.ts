@@ -31,7 +31,7 @@ export default class RoomObserver {
   private readonly ssb: SSB & Required<Pick<SSB, 'conn'>>;
   private readonly roomKey: FeedId;
   private readonly address: string;
-  private readonly roomMetadata: {name?: string};
+  private readonly roomMetadata: {name?: string; features?: Array<string>};
   private endpointsDrain?: {abort: () => void};
 
   constructor(
@@ -56,10 +56,24 @@ export default class RoomObserver {
       onConnect(stream);
     };
 
-    const roomName = this.roomMetadata?.name;
-    if (roomName) {
-      this.ssb.conn.db().update(this.address, {name: roomName});
-      this.ssb.conn.hub().update(this.address, {name: roomName});
+    // if is plain object with at least one field
+    if (
+      typeof this.roomMetadata === 'object' &&
+      this.roomMetadata &&
+      Object.keys(this.roomMetadata).length >= 1
+    ) {
+      const metadata: Record<string, any> = {};
+      const {name, features} = this.roomMetadata;
+      if (name) metadata.name = name;
+      if (Array.isArray(features)) {
+        if (features.includes('room1')) metadata.type = 'room';
+        if (features.includes('room2')) metadata.supportsRoom2 = true;
+        if (features.includes('alias')) metadata.supportsAliases = true;
+        if (features.includes('httpAuth')) metadata.supportsHttpAuth = true;
+        if (features.includes('httpInvite')) metadata.supportsHttpInvite = true;
+      }
+      this.ssb.conn.db().update(this.address, metadata);
+      this.ssb.conn.hub().update(this.address, metadata);
     }
 
     debug('announcing to portal: %s', this.roomKey);
