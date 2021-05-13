@@ -88,7 +88,12 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
     db: () => ({
       update: (addr, data) => {
         t.equal(addr, ROOM_MSADDR);
-        t.deepEqual(data, {name: 'Foobar Express'});
+        t.deepEqual(data, {
+          name: 'Foobar Express',
+          type: 'room',
+          supportsAliases: true,
+          supportsHttpAuth: true,
+        });
         dbUpdated = true;
         if (hubUpdated) close(t.end);
       },
@@ -96,7 +101,12 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
     hub: () => ({
       update: (addr, data) => {
         t.equal(addr, ROOM_MSADDR);
-        t.deepEqual(data, {name: 'Foobar Express'});
+        t.deepEqual(data, {
+          name: 'Foobar Express',
+          type: 'room',
+          supportsAliases: true,
+          supportsHttpAuth: true,
+        });
         hubUpdated = true;
         if (dbUpdated) close(t.end);
       },
@@ -111,7 +121,10 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
                 tunnel: {
                   isRoom: (cb) => {
                     t.pass('rpc.tunnel.isRoom got called');
-                    cb(null, {name: 'Foobar Express'});
+                    cb(null, {
+                      name: 'Foobar Express',
+                      features: ['room1', 'alias', 'httpAuth'],
+                    });
                   },
                   endpoints: () => {
                     return pull.empty();
