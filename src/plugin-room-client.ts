@@ -81,6 +81,7 @@ module.exports = {
 
       const {multiserverAddress, roomId, userId, alias, signature} =
         opts as Required<ConsumeOpts>;
+      const roomAddress = multiserverAddress; // just renaming
       // Let's assume that `signature` is Base64 RFC 4648
       const sig = signature.replace(/_/g, '/').replace(/-/g, '+');
 
@@ -94,7 +95,7 @@ module.exports = {
       const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
 
       // Connect to the room
-      const [err] = await run(ssb.conn.connect)(multiserverAddress);
+      const [err] = await run(ssb.conn.connect)(roomAddress);
       if (err) {
         cb(
           new Error(
@@ -122,6 +123,16 @@ module.exports = {
         }
       }
 
+      // Detect what kind of room is this, ephemeral or not
+      const isForeignRoom = !ssb.conn.db().get(roomAddress);
+      let connectedToOtherAttendants = false;
+      for (const [, data] of ssb.conn.hub().entries()) {
+        if (data.room === roomId) {
+          connectedToOtherAttendants = true;
+          break;
+        }
+      }
+
       // Connect to the alias owner in this room
       const shs = userId.slice(1, -8);
       const tunnelAddr = `tunnel:${roomId}:${userId}~shs:${shs}`;
@@ -132,13 +143,16 @@ module.exports = {
             `alias appears to be offline (${alias}): ` + err2.message ?? err2,
           ),
         );
+        if (isForeignRoom && !connectedToOtherAttendants) {
+          ssb.conn.disconnect(roomAddress);
+        }
         return;
       }
       ssb.conn.remember(tunnelAddr, {
         type: 'room-endpoint',
         key: userId,
         room: roomId,
-        roomAddress: multiserverAddress,
+        roomAddress,
         alias,
         autoconnect: true,
       });
