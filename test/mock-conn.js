@@ -17,6 +17,7 @@ module.exports = {
   init: (ssb, config) => {
     config.mockConn = config.mockConn || {};
     return {
+      remember: () => {},
       connect: () => {},
       disconnect: () => {},
       stage: () => {},

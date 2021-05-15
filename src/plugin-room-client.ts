@@ -68,13 +68,8 @@ module.exports = {
         return;
       }
 
-      const {
-        multiserverAddress,
-        roomId,
-        userId,
-        alias,
-        signature,
-      } = opts as Required<ConsumeOpts>;
+      const {multiserverAddress, roomId, userId, alias, signature} =
+        opts as Required<ConsumeOpts>;
       // Let's assume that `signature` is Base64 RFC 4648
       const sig = signature.replace(/_/g, '/').replace(/-/g, '+');
 
@@ -88,27 +83,42 @@ module.exports = {
       const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
 
       let period = 32; // milliseconds
+      // Connect to the room
       ssb.conn.connect(multiserverAddress, function tryAgain(err: any) {
         if (err) {
           cb(err);
           return;
         }
-
         if (!rooms.has(roomId)) {
           if (period < 8000) setTimeout(tryAgain, (period = period * 2));
           else cb(new Error('cannot connect to alias owner via the room'));
           return;
         }
-        ssb.conn.connect(
-          `tunnel:${roomId}:${userId}~shs:${userId.slice(1, -8)}`,
-          (err2: any, aliasRpc: any) => {
-            if (err2) {
-              cb(err2);
-              return;
-            }
-            cb(null, aliasRpc);
-          },
-        );
+
+        // Connect to the alias owner in this room
+        const shs = userId.slice(1, -8);
+        const tunnelAddr = `tunnel:${roomId}:${userId}~shs:${shs}`;
+        ssb.conn.connect(tunnelAddr, (err2: any, aliasRpc: any) => {
+          if (err2) {
+            cb(err2);
+            return;
+          }
+          ssb.conn.remember(
+            tunnelAddr,
+            {
+              type: 'room-endpoint',
+              key: userId,
+              room: roomId,
+              roomAddress: multiserverAddress,
+              alias,
+              autoconnect: true,
+            },
+            (err3: any) => {
+              if (err3) console.error(err3);
+              cb(null, aliasRpc);
+            },
+          );
+        });
       });
     }
 

@@ -337,10 +337,8 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
 
 test('can consumeAliasUri given an HTTP URL', (t) => {
   let calledIsRoom = false;
-  const expected = [
-    ROOM_MSADDR,
-    `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`,
-  ];
+  const BOB_ADDR = `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`;
+  const expectedConnections = [ROOM_MSADDR, BOB_ADDR];
   const hubEvents = Notify();
 
   function onConnectedToRoom(cb) {
@@ -389,9 +387,17 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
     hub: () => ({
       listen: () => hubEvents.listen(),
     }),
+    remember(addr, data, cb) {
+      t.equal(addr, BOB_ADDR, 'remembered bob');
+      t.equal(data.key, BOB_ID, 'key');
+      t.equal(data.room, ROOM_ID, 'roomKey');
+      t.equal(data.roomAddress, ROOM_MSADDR, 'roomAddress');
+      t.equal(data.autoconnect, true, 'autoconnect');
+      cb(null, {});
+    },
     connect(addr, data, cb) {
       if (!cb) cb = data;
-      t.equal(addr, expected.shift(), `connect to ${addr}`);
+      t.equal(addr, expectedConnections.shift(), `connect to ${addr}`);
       if (addr === ROOM_MSADDR) {
         onConnectedToRoom(cb);
       } else {
@@ -436,10 +442,8 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
 
 test('can consumeAliasUri given an SSB URI', (t) => {
   let calledIsRoom = false;
-  const expected = [
-    ROOM_MSADDR,
-    `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`,
-  ];
+  const BOB_ADDR = `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`;
+  const expectedConnections = [ROOM_MSADDR, BOB_ADDR];
   const hubEvents = Notify();
 
   function onConnectedToRoom(cb) {
@@ -488,9 +492,17 @@ test('can consumeAliasUri given an SSB URI', (t) => {
     hub: () => ({
       listen: () => hubEvents.listen(),
     }),
+    remember(addr, data, cb) {
+      t.equal(addr, BOB_ADDR, 'remembered bob');
+      t.equal(data.key, BOB_ID, 'key');
+      t.equal(data.room, ROOM_ID, 'roomKey');
+      t.equal(data.roomAddress, ROOM_MSADDR, 'roomAddress');
+      t.equal(data.autoconnect, true, 'autoconnect');
+      cb(null, {});
+    },
     connect(addr, data, cb) {
       if (!cb) cb = data;
-      t.equal(addr, expected.shift(), `connect to ${addr}`);
+      t.equal(addr, expectedConnections.shift(), `connect to ${addr}`);
       if (addr === ROOM_MSADDR) {
         onConnectedToRoom(cb);
       } else {

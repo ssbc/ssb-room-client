@@ -1,3 +1,4 @@
+import {AddressData} from 'ssb-conn-db/lib/types';
 import {ConnectionData} from 'ssb-conn-hub/lib/types';
 import {StagedData} from 'ssb-conn-staging/lib/types';
 import {FeedId} from 'ssb-typescript';
@@ -18,6 +19,7 @@ export interface SSB {
   conn?: {
     connect: (msaddr: string, cb: Callback) => void;
     disconnect: CallableFunction;
+    remember: CallableFunction;
     stage: CallableFunction;
     unstage: CallableFunction;
     db: () => {
