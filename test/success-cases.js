@@ -82,6 +82,8 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
         t.deepEqual(data, {
           name: 'Foobar Express',
           type: 'room',
+          membership: true,
+          openInvites: true,
           supportsAliases: true,
           supportsHttpAuth: true,
         });
@@ -95,6 +97,8 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
         t.deepEqual(data, {
           name: 'Foobar Express',
           type: 'room',
+          membership: true,
+          openInvites: true,
           supportsAliases: true,
           supportsHttpAuth: true,
         });
@@ -114,6 +118,7 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
                     t.pass('rpc.tunnel.isRoom got called');
                     cb(null, {
                       name: 'Foobar Express',
+                      member: true,
                       features: ['room1', 'alias', 'httpAuth'],
                     });
                   },

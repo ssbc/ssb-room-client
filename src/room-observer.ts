@@ -62,11 +62,12 @@ export default class RoomObserver {
       this.roomMetadata &&
       Object.keys(this.roomMetadata).length >= 1
     ) {
-      const metadata: Record<string, any> = {};
-      const {name, features} = this.roomMetadata;
+      const metadata: Record<string, any> = {type: 'room'};
+      const {name, member, features} = this.roomMetadata;
       if (name) metadata.name = name;
+      if (member) metadata.membership = true;
       if (Array.isArray(features)) {
-        if (features.includes('room1')) metadata.type = 'room';
+        if (features.includes('room1')) metadata.openInvites = true;
         if (features.includes('room2')) metadata.supportsRoom2 = true;
         if (features.includes('alias')) metadata.supportsAliases = true;
         if (features.includes('httpAuth')) metadata.supportsHttpAuth = true;
