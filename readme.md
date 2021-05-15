@@ -53,23 +53,37 @@ Also, configure your [ssb-config connections](https://github.com/ssbc/ssb-config
 
 This library supports [room2 features](https://github.com/ssb-ngi-pointer/rooms2), alias registration and alias consumption, using the following muxrpc APIs:
 
-```js
-// `uri` is a string, either an HTTP URL or an SSB URI:
-//   * `https://alice.room.com`
-//   * `ssb:experimental?action=consume-alias&roomId=R&userId=U&.......`
-// `cb` is called with the 2nd arg `rpc` (of the alias' peer) if succeeded
-ssb.roomClient.consumeAliasUri(uri, cb)
+### `ssb.roomClient.consumeAliasUri(uri, cb)`
 
-// `roomId` is the SSB ID of the room server where you want to register an alias
-// `alias` is a string you want to be known by, e.g. "Alice"
-// `cb` will be called with 2nd arg `true` if everything succeeded
-ssb.roomClient.registerAlias(roomId, alias, cb)
+Connects to a member of the room known by the "alias" `uri`.
 
-// `roomId` is the SSB ID of the room server where you want to revoke an alias
-// `alias` is a string you want to remove, e.g. "Alice"
-// `cb` will be called with 2nd arg `true` if everything succeeded
-ssb.roomClient.revokeAlias(roomId, alias, cb)
-```
+* `uri` is a string, either an HTTP URL or an SSB URI:
+    * `https://alice.room.com`
+    * `ssb:experimental?action=consume-alias&roomId=R&userId=U&.......`
+* `cb` is called with the 2nd arg `rpc` (of the alias' peer) if succeeded
+
+This API will:
+
+1. Make an HTTP call on the room server
+2. Establish a muxrpc connection with the room
+3. Establish a muxrpc connection to the alias peer inside the room
+4. Store metadata about the alias peer in [ssb-conn DB](https://github.com/staltz/ssb-conn/), so that in the future we can reconnect to this alias peer
+
+### `ssb.roomClient.registerAlias(roomId, alias, cb)`
+
+Registers an alias at the room server known by `roomId`
+
+* `roomId` is the SSB ID of the room server where you want to register an alias
+* `alias` is a string you want to be known by, e.g. "alice"
+* `cb` will be called with 2nd arg `true` if everything succeeded
+
+### `ssb.roomClient.revokeAlias(roomId, alias, cb)`
+
+* `roomId` is the SSB ID of the room server where you want to revoke an alias
+* `alias` is a string you want to remove, e.g. "Alice"
+* `cb` will be called with 2nd arg `true` if everything succeeded
+
+### Utils and misc
 
 Apart from that, you just use SSB CONN's APIs to connect with Rooms and the peers online in a Room.
 
