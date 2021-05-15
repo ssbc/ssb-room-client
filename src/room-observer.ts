@@ -153,6 +153,17 @@ export default class RoomObserver {
     return `tunnel:${this.roomKey}:${key}~shs:${shs}`;
   }
 
+  /**
+   * Similar to close(), but just destroys this "observer", not the
+   * underlying connections.
+   */
+  public cancel() {
+    this.endpointsDrain?.abort();
+  }
+
+  /**
+   * Similar to cancel(), but also closes connection with the room server.
+   */
   public close() {
     this.endpointsDrain?.abort();
     for (const [addr, data] of this.ssb.conn.staging().entries()) {

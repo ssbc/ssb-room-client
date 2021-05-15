@@ -30,6 +30,10 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
           rpc.tunnel.isRoom((err: any, res: any) => {
             if (err || !res) return;
             debug('is connected to an actual ssb-room');
+            if (rooms.has(key)) {
+              rooms.get(key)!.cancel();
+              rooms.delete(key);
+            }
             rooms.set(
               key,
               new RoomObserver(ssb, key, address, rpc, res, onConnect),
