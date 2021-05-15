@@ -13,6 +13,12 @@ export interface ConnectOpts {
   origin?: FeedId;
 }
 
+export interface IsRoomMetadata {
+  name?: string;
+  description?: string;
+  features?: Array<string>;
+}
+
 export interface SSB {
   id: FeedId;
   keys: any;

@@ -1,5 +1,5 @@
 import {FeedId} from 'ssb-typescript';
-import {RPC, SSB} from './types';
+import {IsRoomMetadata, RPC, SSB} from './types';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
 
@@ -31,7 +31,7 @@ export default class RoomObserver {
   private readonly ssb: SSB & Required<Pick<SSB, 'conn'>>;
   private readonly roomKey: FeedId;
   private readonly address: string;
-  private readonly roomMetadata: {name?: string; features?: Array<string>};
+  private readonly roomMetadata: boolean | IsRoomMetadata;
   private endpointsDrain?: {abort: () => void};
 
   constructor(
@@ -88,6 +88,8 @@ export default class RoomObserver {
 
   private endpointsUpdated = (endpoints: Array<FeedId>) => {
     const room = this.roomKey;
+    const roomName =
+      typeof this.roomMetadata === 'object' ? this.roomMetadata.name : void 0;
     debug('got endpoints from %s: %s', room, JSON.stringify(endpoints));
 
     // Update onlineCount metadata for this room
@@ -114,7 +116,7 @@ export default class RoomObserver {
         type: 'room-endpoint',
         key,
         room,
-        roomName: this.roomMetadata?.name,
+        roomName,
       });
     }
   };
