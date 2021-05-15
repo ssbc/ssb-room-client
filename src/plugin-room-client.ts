@@ -31,6 +31,10 @@ function sleep(period: number) {
 
 const ALIAS_URI_ACTION = 'consume-alias';
 
+function aliasRegistrationStr(roomId: FeedId, userId: FeedId, alias: string) {
+  return `=room-alias-registration:${roomId}:${userId}:${alias}`;
+}
+
 module.exports = {
   name: 'roomClient',
   version: '1.0.0',
@@ -80,7 +84,7 @@ module.exports = {
       // Let's assume that `signature` is Base64 RFC 4648
       const sig = signature.replace(/_/g, '/').replace(/-/g, '+');
 
-      const body = `=room-alias-registration:${roomId}:${userId}:${alias}`;
+      const body = aliasRegistrationStr(roomId, userId, alias);
       const ok = ssbKeys.verify(userId, sig, body);
       if (!ok) {
         cb(new Error(`cannot consumeAlias because the signature is wrong`));
@@ -257,7 +261,7 @@ module.exports = {
         return;
       }
 
-      const body = `=room-alias-registration:${roomKey}:${ssb.id}:${alias}`;
+      const body = aliasRegistrationStr(roomKey, ssb.id, alias);
       const sig = ssbKeys.sign(config.keys, body);
       roomRPC.room.registerAlias(alias, sig, cb);
     }
