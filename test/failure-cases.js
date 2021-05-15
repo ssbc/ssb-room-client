@@ -269,3 +269,16 @@ test('bad ConnHub listen event', (t) => {
     });
   }, 200);
 });
+
+test('connect to offline room', (t) => {
+  const ssb = CreateSSB();
+
+  ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, x) => {
+    t.match(
+      err.message,
+      /^cant connect to .* because room .* is offline or unknown$/,
+      'connect but offline',
+    );
+    ssb.close(t.end);
+  });
+});

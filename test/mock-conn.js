@@ -23,6 +23,8 @@ module.exports = {
       unstage: () => {},
       ...config.mockConn,
       db: () => ({
+        entries: () => [],
+        get: () => {},
         update: () => {},
         ...(config.mockConn.db ? config.mockConn.db() : null),
       }),

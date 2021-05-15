@@ -2,9 +2,11 @@ import {ListenEvent} from 'ssb-conn-hub/lib/types';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
 const Ref = require('ssb-ref');
-import {Callback, ConnectOpts, SSBWithConn} from './types';
+import run = require('promisify-tuple');
+import {Callback, ConnectOpts, RPC, SSBWithConn} from './types';
 import RoomObserver from './room-observer';
 import {FeedId} from 'ssb-typescript';
+import {toTunnelAddress} from './utils';
 
 type Rooms = Map<FeedId, RoomObserver>;
 
@@ -65,7 +67,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
       };
     },
 
-    client(addr: string | ConnectOpts, cb: Callback) {
+    async client(addr: string | ConnectOpts, cb: Callback) {
       debug(`we wish to connect to %o`, addr);
       const opts = self.parse(addr);
       if (!opts) {
@@ -73,20 +75,80 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
         return;
       }
       const {portal, target} = opts;
-      if (!rooms.has(portal)) {
-        cb(new Error(`room ${portal} is offline`));
+      const addrStr = JSON.stringify(addr);
+
+      // Grab the rpc of the `portal` room
+      let roomRPC: RPC | null = null;
+      if (rooms.has(portal)) {
+        roomRPC = rooms.get(portal)!.rpc;
+      }
+      // If no room found, look up room in connDB and connect to it
+      if (!roomRPC) {
+        for (const [msaddr] of ssb.conn.db().entries()) {
+          const key = Ref.getKeyFromAddress(msaddr);
+          if (key === portal) {
+            debug(
+              `to connect to ${addrStr} we first have to connect to ${portal}`,
+            );
+            const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+            if (err) {
+              cb(
+                new Error(
+                  `cant connect to ${addrStr} because ` +
+                    `cant reach the room ${portal} due to: ` +
+                    err.message ?? err,
+                ),
+              );
+              return;
+            }
+            roomRPC = rpc;
+          }
+        }
+      }
+      // If no room found, find tunnel addr in connDB and connect to its `room`
+      if (!roomRPC) {
+        const addrPlusShs = toTunnelAddress(portal, target);
+        const peerData = ssb.conn.db().get(addrPlusShs);
+        if (peerData?.room === portal && peerData?.roomAddress) {
+          debug(
+            `to connect to ${addrStr} we first have to connect to ${portal}`,
+          );
+          const [err, rpc] = await run<RPC>(ssb.conn.connect)(
+            peerData.roomAddress,
+          );
+          if (err) {
+            cb(
+              new Error(
+                `cant connect to ${addrStr} because ` +
+                  `cant reach the room ${portal} due to: ` +
+                  err.message ?? err,
+              ),
+            );
+            return;
+          }
+          roomRPC = rpc;
+        }
+      }
+      // If still no room is found, consider it unknown
+      if (!roomRPC) {
+        cb(
+          new Error(
+            `cant connect to ${addrStr} because ` +
+              `room ${portal} is offline or unknown`,
+          ),
+        );
         return;
       }
 
-      const rpc = rooms.get(portal)!.rpc;
       debug(`will call tunnel.connect at ${target} via room ${portal}`);
-      const duplex = rpc.tunnel.connect({target, portal}, (err) => {
-        if (err)
+      const duplex = roomRPC.tunnel.connect({target, portal}, (err) => {
+        if (err) {
           debug(
             'tunnel duplex broken with %o because %s',
             addr,
-            err.message || err,
+            err.message ?? err,
           );
+        }
       });
       cb(null, duplex);
     },

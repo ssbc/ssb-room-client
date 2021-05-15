@@ -16,11 +16,15 @@ export interface SSB {
   id: FeedId;
   keys: any;
   conn?: {
-    connect: CallableFunction;
+    connect: (msaddr: string, cb: Callback) => void;
     disconnect: CallableFunction;
     stage: CallableFunction;
     unstage: CallableFunction;
-    db: () => {update: CallableFunction};
+    db: () => {
+      update: CallableFunction;
+      get: (msaddr: string) => AddressData | undefined;
+      entries: () => Iterable<[string, AddressData]>;
+    };
     hub: () => {
       listen: CallableFunction;
       update: (k: string, d: any) => void;

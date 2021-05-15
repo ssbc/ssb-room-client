@@ -1,8 +1,9 @@
+import {FeedId} from 'ssb-typescript';
 const {isAddress} = require('ssb-ref');
 
-const SEED = 'SSB+Room+PSK3TLYC2T86EHQCUHBUHASCASE18JBV24=';
+export const SEED = 'SSB+Room+PSK3TLYC2T86EHQCUHBUHASCASE18JBV24=';
 
-function isOpenRoomInvite(invite: any) {
+export function isOpenRoomInvite(invite: any) {
   if (typeof invite !== 'string') return false;
   if (!invite) return false;
   if (!invite.endsWith(':' + SEED)) return false;
@@ -12,17 +13,15 @@ function isOpenRoomInvite(invite: any) {
   return true;
 }
 
-function addressToOpenRoomInvite(addr: any) {
+export function addressToOpenRoomInvite(addr: any) {
   return typeof addr === 'string' ? `${addr}:${SEED}` : null;
 }
 
-function openRoomInviteToAddress(invite: any) {
+export function openRoomInviteToAddress(invite: any) {
   return isOpenRoomInvite(invite) ? invite.split(':' + SEED)[0] : null;
 }
 
-module.exports = {
-  SEED,
-  isOpenRoomInvite,
-  addressToOpenRoomInvite,
-  openRoomInviteToAddress,
-};
+export function toTunnelAddress(portal: FeedId, target: FeedId): string {
+  const shs = target.slice(1, -8);
+  return `tunnel:${portal}:${target}~shs:${shs}`;
+}

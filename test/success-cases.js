@@ -13,15 +13,6 @@ const {
 } = require('./keys');
 const CreateSSB = require('./sbot');
 
-test('connect to room', (t) => {
-  const ssb = CreateSSB();
-
-  ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, x) => {
-    t.match(err.message, /^room @\S+ is offline$/, 'connect but offline');
-    ssb.close(t.end);
-  });
-});
-
 test('when connected to a peer, checks if it is a room', (t) => {
   CreateSSB((close) => ({
     hub: () => ({
