@@ -211,36 +211,102 @@ module.exports = {
       }
     }
 
-    function registerAlias(
+    async function registerAlias(
       roomKey: FeedId,
       alias: string,
       cb: Callback<string>,
     ) {
-      const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
       if (!Ref.isFeed(roomKey)) {
-        cb(new Error(`cannot register alias at unknown room ${roomKey}`));
+        cb(new Error(`cannot registerAlias at invalid room ${roomKey}`));
         return;
       }
-      if (!rooms.has(roomKey)) {
-        cb(new Error(`cannot register alias at offline room ${roomKey}`));
+
+      // Grab the rpc of the `roomKey` room
+      const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
+      let roomRPC: RPC | null = null;
+      if (rooms.has(roomKey)) {
+        roomRPC = rooms.get(roomKey)!.rpc;
+      }
+      // If no room found, look up room in connDB and connect to it
+      if (!roomRPC) {
+        for (const [msaddr] of ssb.conn.db().entries()) {
+          const key = Ref.getKeyFromAddress(msaddr);
+          if (key === roomKey) {
+            const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+            if (err) {
+              cb(
+                new Error(
+                  `cannot registerAlias because ` +
+                    `cant reach the room ${roomKey} due to: ` +
+                    err.message ?? err,
+                ),
+              );
+              return;
+            }
+            roomRPC = rpc;
+          }
+        }
+      }
+      // If still no room is found, consider it unknown
+      if (!roomRPC) {
+        cb(
+          new Error(
+            `cannot registerAlias at offline or unknown room ${roomKey}`,
+          ),
+        );
         return;
       }
+
       const body = `=room-alias-registration:${roomKey}:${ssb.id}:${alias}`;
       const sig = ssbKeys.sign(config.keys, body);
-      rooms.get(roomKey)!.rpc.room.registerAlias(alias, sig, cb);
+      roomRPC.room.registerAlias(alias, sig, cb);
     }
 
-    function revokeAlias(roomKey: FeedId, alias: string, cb: Callback<true>) {
-      const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
+    async function revokeAlias(
+      roomKey: FeedId,
+      alias: string,
+      cb: Callback<true>,
+    ) {
       if (!Ref.isFeed(roomKey)) {
-        cb(new Error(`cannot revoke alias at unknown room ${roomKey}`));
+        cb(new Error(`cannot revokeAlias at invalid room ${roomKey}`));
         return;
       }
-      if (!rooms.has(roomKey)) {
-        cb(new Error(`cannot revoke alias at offline room ${roomKey}`));
+
+      // Grab the rpc of the `roomKey` room
+      const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
+      let roomRPC: RPC | null = null;
+      if (rooms.has(roomKey)) {
+        roomRPC = rooms.get(roomKey)!.rpc;
+      }
+      // If no room found, look up room in connDB and connect to it
+      if (!roomRPC) {
+        for (const [msaddr] of ssb.conn.db().entries()) {
+          const key = Ref.getKeyFromAddress(msaddr);
+          if (key === roomKey) {
+            const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+            if (err) {
+              cb(
+                new Error(
+                  `cannot revokeAlias because ` +
+                    `cant reach the room ${roomKey} due to: ` +
+                    err.message ?? err,
+                ),
+              );
+              return;
+            }
+            roomRPC = rpc;
+          }
+        }
+      }
+      // If still no room is found, consider it unknown
+      if (!roomRPC) {
+        cb(
+          new Error(`cannot revokeAlias at offline or unknown room ${roomKey}`),
+        );
         return;
       }
-      rooms.get(roomKey)!.rpc.room.revokeAlias(alias, cb);
+
+      roomRPC.room.revokeAlias(alias, cb);
     }
 
     return {
