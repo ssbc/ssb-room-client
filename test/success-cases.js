@@ -118,7 +118,7 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
                     t.pass('rpc.tunnel.isRoom got called');
                     cb(null, {
                       name: 'Foobar Express',
-                      member: true,
+                      membership: true,
                       features: ['room1', 'alias', 'httpAuth'],
                     });
                   },

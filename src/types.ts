@@ -16,7 +16,7 @@ export interface ConnectOpts {
 export interface IsRoomMetadata {
   name?: string;
   description?: string;
-  member?: boolean;
+  membership?: boolean;
   features?: Array<string>;
 }
 
