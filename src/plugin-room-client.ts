@@ -83,7 +83,7 @@ module.exports = {
       const body = `=room-alias-registration:${roomId}:${userId}:${alias}`;
       const ok = ssbKeys.verify(userId, sig, body);
       if (!ok) {
-        cb(new Error(`cannot consumedAlias because the signature is wrong`));
+        cb(new Error(`cannot consumeAlias because the signature is wrong`));
         return;
       }
 
@@ -92,7 +92,13 @@ module.exports = {
       // Connect to the room
       const [err] = await run(ssb.conn.connect)(multiserverAddress);
       if (err) {
-        cb(err);
+        cb(
+          new Error(
+            `cannot consumeAlias ${alias} because ` +
+              `cannot connect to room ${roomId} due to: ` +
+              err.message ?? err,
+          ),
+        );
         return;
       }
 
@@ -102,7 +108,12 @@ module.exports = {
         if (period < 8000) {
           await sleep((period = period * 2));
         } else {
-          cb(new Error('cannot connect to alias owner via the room'));
+          cb(
+            new Error(
+              `cannot consumeAlias ${alias} because room ${roomId} ` +
+                `is missing from our internal cache`,
+            ),
+          );
           return;
         }
       }
@@ -112,7 +123,11 @@ module.exports = {
       const tunnelAddr = `tunnel:${roomId}:${userId}~shs:${shs}`;
       const [err2, aliasRpc] = await run<RPC>(ssb.conn.connect)(tunnelAddr);
       if (err2) {
-        cb(err2);
+        cb(
+          new Error(
+            `alias appears to be offline (${alias}): ` + err2.message ?? err2,
+          ),
+        );
         return;
       }
       ssb.conn.remember(tunnelAddr, {
