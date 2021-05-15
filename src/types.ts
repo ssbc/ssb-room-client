@@ -25,7 +25,7 @@ export interface SSB {
   conn?: {
     connect: (msaddr: string, cb: Callback) => void;
     disconnect: CallableFunction;
-    remember: CallableFunction;
+    remember: (msaddr: string, data: any) => void;
     stage: CallableFunction;
     unstage: CallableFunction;
     db: () => {

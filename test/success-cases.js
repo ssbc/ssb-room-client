@@ -387,13 +387,12 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
     hub: () => ({
       listen: () => hubEvents.listen(),
     }),
-    remember(addr, data, cb) {
+    remember(addr, data) {
       t.equal(addr, BOB_ADDR, 'remembered bob');
       t.equal(data.key, BOB_ID, 'key');
       t.equal(data.room, ROOM_ID, 'roomKey');
       t.equal(data.roomAddress, ROOM_MSADDR, 'roomAddress');
       t.equal(data.autoconnect, true, 'autoconnect');
-      cb(null, {});
     },
     connect(addr, data, cb) {
       if (!cb) cb = data;
@@ -492,13 +491,12 @@ test('can consumeAliasUri given an SSB URI', (t) => {
     hub: () => ({
       listen: () => hubEvents.listen(),
     }),
-    remember(addr, data, cb) {
+    remember(addr, data) {
       t.equal(addr, BOB_ADDR, 'remembered bob');
       t.equal(data.key, BOB_ID, 'key');
       t.equal(data.room, ROOM_ID, 'roomKey');
       t.equal(data.roomAddress, ROOM_MSADDR, 'roomAddress');
       t.equal(data.autoconnect, true, 'autoconnect');
-      cb(null, {});
     },
     connect(addr, data, cb) {
       if (!cb) cb = data;

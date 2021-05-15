@@ -2,7 +2,8 @@ import {FeedId} from 'ssb-typescript';
 const Ref = require('ssb-ref');
 const ssbKeys = require('ssb-keys');
 import RoomObserver from './room-observer';
-import {Callback, SSBConfig, SSBWithConn} from './types';
+import run = require('promisify-tuple');
+import {Callback, RPC, SSBConfig, SSBWithConn} from './types';
 import {makeRequest} from '@minireq/node';
 
 const minireq: ReturnType<typeof makeRequest> =
@@ -18,9 +19,15 @@ interface ConsumeOpts {
   signature: string;
 }
 
-type NullPartial<T> = {
+type Nulls<T> = {
   [P in keyof T]: T[P] | null;
 };
+
+function sleep(period: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, period, null);
+  });
+}
 
 const ALIAS_URI_ACTION = 'consume-alias';
 
@@ -46,7 +53,7 @@ module.exports = {
       );
     }
 
-    function consumeAlias(opts: NullPartial<ConsumeOpts>, cb: Callback<any>) {
+    async function consumeAlias(opts: Nulls<ConsumeOpts>, cb: Callback<RPC>) {
       if (!Ref.isAddress(opts.multiserverAddress)) {
         cb(new Error(`bad multiserverAddress: ${opts.multiserverAddress}`));
         return;
@@ -82,47 +89,44 @@ module.exports = {
 
       const rooms = ssb.tunnel.getRoomsMap() as Map<FeedId, RoomObserver>;
 
-      let period = 32; // milliseconds
       // Connect to the room
-      ssb.conn.connect(multiserverAddress, function tryAgain(err: any) {
-        if (err) {
-          cb(err);
-          return;
-        }
-        if (!rooms.has(roomId)) {
-          if (period < 8000) setTimeout(tryAgain, (period = period * 2));
-          else cb(new Error('cannot connect to alias owner via the room'));
-          return;
-        }
+      const [err] = await run(ssb.conn.connect)(multiserverAddress);
+      if (err) {
+        cb(err);
+        return;
+      }
 
-        // Connect to the alias owner in this room
-        const shs = userId.slice(1, -8);
-        const tunnelAddr = `tunnel:${roomId}:${userId}~shs:${shs}`;
-        ssb.conn.connect(tunnelAddr, (err2: any, aliasRpc: any) => {
-          if (err2) {
-            cb(err2);
-            return;
-          }
-          ssb.conn.remember(
-            tunnelAddr,
-            {
-              type: 'room-endpoint',
-              key: userId,
-              room: roomId,
-              roomAddress: multiserverAddress,
-              alias,
-              autoconnect: true,
-            },
-            (err3: any) => {
-              if (err3) console.error(err3);
-              cb(null, aliasRpc);
-            },
-          );
-        });
+      // Wait until room is connected
+      let period = 32; // milliseconds
+      while (!rooms.has(roomId)) {
+        if (period < 8000) {
+          await sleep((period = period * 2));
+        } else {
+          cb(new Error('cannot connect to alias owner via the room'));
+          return;
+        }
+      }
+
+      // Connect to the alias owner in this room
+      const shs = userId.slice(1, -8);
+      const tunnelAddr = `tunnel:${roomId}:${userId}~shs:${shs}`;
+      const [err2, aliasRpc] = await run<RPC>(ssb.conn.connect)(tunnelAddr);
+      if (err2) {
+        cb(err2);
+        return;
+      }
+      ssb.conn.remember(tunnelAddr, {
+        type: 'room-endpoint',
+        key: userId,
+        room: roomId,
+        roomAddress: multiserverAddress,
+        alias,
+        autoconnect: true,
       });
+      cb(null, aliasRpc);
     }
 
-    async function consumeAliasUri(input: string, cb: Callback<any>) {
+    async function consumeAliasUri(input: string, cb: Callback<RPC>) {
       if (!input) {
         cb(new Error('missing URI input'));
         return;
