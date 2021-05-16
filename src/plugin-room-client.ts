@@ -247,22 +247,20 @@ module.exports = {
       }
       // If no room found, look up room in connDB and connect to it
       if (!roomRPC) {
-        for (const [msaddr] of ssb.conn.db().entries()) {
-          const key = Ref.getKeyFromAddress(msaddr);
-          if (key === roomKey) {
-            const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
-            if (err) {
-              cb(
-                new Error(
-                  `cannot registerAlias because ` +
-                    `cant reach the room ${roomKey} due to: ` +
-                    err.message ?? err,
-                ),
-              );
-              return;
-            }
-            roomRPC = rpc;
+        const msaddr = ssb.conn.db().getAddressForId(roomKey);
+        if (msaddr) {
+          const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+          if (err) {
+            cb(
+              new Error(
+                `cannot registerAlias because ` +
+                  `cant reach the room ${roomKey} due to: ` +
+                  err.message ?? err,
+              ),
+            );
+            return;
           }
+          roomRPC = rpc;
         }
       }
       // If still no room is found, consider it unknown
@@ -298,22 +296,20 @@ module.exports = {
       }
       // If no room found, look up room in connDB and connect to it
       if (!roomRPC) {
-        for (const [msaddr] of ssb.conn.db().entries()) {
-          const key = Ref.getKeyFromAddress(msaddr);
-          if (key === roomKey) {
-            const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
-            if (err) {
-              cb(
-                new Error(
-                  `cannot revokeAlias because ` +
-                    `cant reach the room ${roomKey} due to: ` +
-                    err.message ?? err,
-                ),
-              );
-              return;
-            }
-            roomRPC = rpc;
+        const msaddr = ssb.conn.db().getAddressForId(roomKey);
+        if (msaddr) {
+          const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+          if (err) {
+            cb(
+              new Error(
+                `cannot revokeAlias because ` +
+                  `cant reach the room ${roomKey} due to: ` +
+                  err.message ?? err,
+              ),
+            );
+            return;
           }
+          roomRPC = rpc;
         }
       }
       // If still no room is found, consider it unknown

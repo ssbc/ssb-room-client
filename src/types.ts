@@ -32,6 +32,7 @@ export interface SSB {
     db: () => {
       update: CallableFunction;
       get: (msaddr: string) => AddressData | undefined;
+      getAddressForId: (id: FeedId) => string | undefined;
       entries: () => Iterable<[string, AddressData]>;
     };
     hub: () => {
