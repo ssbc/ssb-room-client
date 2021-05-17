@@ -75,7 +75,7 @@ Registers an alias at the room server known by `roomId`
 
 * `roomId` is the SSB ID of the room server where you want to register an alias
 * `alias` is a string you want to be known by, e.g. "alice"
-* `cb` will be called with 2nd arg `true` if everything succeeded
+* `cb` will be called with 2nd arg as the confirmed alias URL if everything succeeded
 
 ### `ssb.roomClient.revokeAlias(roomId, alias, cb)`
 
