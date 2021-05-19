@@ -1,7 +1,7 @@
 {
   "name": "ssb-room-client",
   "description": "Secret-stack plugin to interact with room servers",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "homepage": "https://github.com/ssb-ngi-pointer/ssb-room-client",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
