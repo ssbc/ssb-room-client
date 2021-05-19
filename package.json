@@ -13,7 +13,7 @@
     "@minireq/browser": "^2.0.0",
     "@minireq/node": "^2.0.0",
     "debug": "^4.3.1",
-    "promisify-tuple": "^1.0.1",
+    "promisify-tuple": "^1.2.0",
     "pull-pair": "^1.1.0",
     "pull-stream": "^3.6.14",
     "ssb-conn-db": ">=0.2.0",

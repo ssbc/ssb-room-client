@@ -91,7 +91,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
             debug(
               `to connect to ${addrStr} we first have to connect to ${portal}`,
             );
-            const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+            const [err, rpc] = await run(ssb.conn.connect)(msaddr);
             if (err) {
               cb(
                 new Error(
@@ -114,9 +114,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
           debug(
             `to connect to ${addrStr} we first have to connect to ${portal}`,
           );
-          const [err, rpc] = await run<RPC>(ssb.conn.connect)(
-            peerData.roomAddress,
-          );
+          const [err, rpc] = await run(ssb.conn.connect)(peerData.roomAddress);
           if (err) {
             cb(
               new Error(

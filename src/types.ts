@@ -24,7 +24,7 @@ export interface SSB {
   id: FeedId;
   keys: any;
   conn?: {
-    connect: (msaddr: string, cb: Callback) => void;
+    connect: (msaddr: string, cb: Callback<RPC>) => void;
     disconnect: CallableFunction;
     remember: (msaddr: string, data: any) => void;
     stage: CallableFunction;

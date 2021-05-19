@@ -136,7 +136,7 @@ module.exports = {
       // Connect to the alias owner in this room
       const shs = userId.slice(1, -8);
       const tunnelAddr = `tunnel:${roomId}:${userId}~shs:${shs}`;
-      const [err2, aliasRpc] = await run<RPC>(ssb.conn.connect)(tunnelAddr);
+      const [err2, aliasRpc] = await run(ssb.conn.connect)(tunnelAddr);
       if (err2) {
         cb(
           new Error(
@@ -249,7 +249,7 @@ module.exports = {
       if (!roomRPC) {
         const msaddr = ssb.conn.db().getAddressForId(roomKey);
         if (msaddr) {
-          const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+          const [err, rpc] = await run(ssb.conn.connect)(msaddr);
           if (err) {
             cb(
               new Error(
@@ -298,7 +298,7 @@ module.exports = {
       if (!roomRPC) {
         const msaddr = ssb.conn.db().getAddressForId(roomKey);
         if (msaddr) {
-          const [err, rpc] = await run<RPC>(ssb.conn.connect)(msaddr);
+          const [err, rpc] = await run(ssb.conn.connect)(msaddr);
           if (err) {
             cb(
               new Error(
