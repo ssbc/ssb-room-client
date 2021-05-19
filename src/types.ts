@@ -13,7 +13,7 @@ export interface ConnectOpts {
   origin?: FeedId;
 }
 
-export interface IsRoomMetadata {
+export interface RoomMetadata {
   name?: string;
   description?: string;
   membership?: boolean;
@@ -56,6 +56,7 @@ export interface RPC {
   tunnel: {
     endpoints: CallableFunction;
     connect: (opts: ConnectOpts, cb: Callback) => void;
+    isRoom: (cb: Callback<RoomMetadata | boolean>) => void;
   };
   close: CallableFunction;
   room: {

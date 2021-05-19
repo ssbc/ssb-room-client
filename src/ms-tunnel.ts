@@ -3,7 +3,7 @@ const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
 const Ref = require('ssb-ref');
 import run = require('promisify-tuple');
-import {Callback, ConnectOpts, RPC, SSBWithConn} from './types';
+import {Callback, ConnectOpts, RoomMetadata, RPC, SSBWithConn} from './types';
 import RoomObserver from './room-observer';
 import {FeedId} from 'ssb-typescript';
 import {toTunnelAddress} from './utils';
@@ -27,7 +27,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
           if (!key) return;
           if (rooms.has(key)) return;
           if (!details?.rpc) return;
-          const rpc = details.rpc;
+          const rpc: RPC = details.rpc;
           debug('will try to call tunnel.isRoom() on the peer %s', key);
           rpc.tunnel.isRoom((err: any, res: any) => {
             if (err || !res) return;

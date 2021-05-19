@@ -1,5 +1,5 @@
 import {FeedId} from 'ssb-typescript';
-import {IsRoomMetadata, RPC, SSB} from './types';
+import {RoomMetadata, RPC, SSB} from './types';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
 
@@ -31,7 +31,7 @@ export default class RoomObserver {
   private readonly ssb: SSB & Required<Pick<SSB, 'conn'>>;
   private readonly roomKey: FeedId;
   private readonly address: string;
-  private readonly roomMetadata: boolean | IsRoomMetadata;
+  private readonly roomMetadata: boolean | RoomMetadata;
   private endpointsDrain?: {abort: () => void};
 
   constructor(
