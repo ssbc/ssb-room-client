@@ -27,6 +27,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
           if (!key) return;
           if (rooms.has(key)) return;
           if (!details?.rpc) return;
+          if (address.startsWith('tunnel:')) return;
           const rpc: RPC = details.rpc;
           debug('will try to call tunnel.isRoom() on the peer %s', key);
           rpc.tunnel.isRoom((err: any, res: any) => {
