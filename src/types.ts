@@ -18,6 +18,13 @@ export interface RoomMetadata {
   description?: string;
   membership?: boolean;
   features?: Array<string>;
+
+  /**
+   * This is not in `isRoom()`'s response neither in `metadata()`'s response,
+   * but is monkey-patched internally to signal that the metadata object is
+   * coming from `isRoom()`.
+   */
+  _isRoom1?: true;
 }
 
 export interface SSB {
@@ -62,6 +69,7 @@ export interface RPC {
   room: {
     registerAlias: (alias: string, sig: string, cb: Callback) => void;
     revokeAlias: (alias: string, cb: Callback) => void;
+    metadata: (cb: Callback<RoomMetadata | boolean>) => void;
   };
 }
 

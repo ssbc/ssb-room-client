@@ -10,6 +10,7 @@ module.exports = {
   manifest: {
     registerAlias: 'async',
     revokeAlias: 'async',
+    metadata: 'async',
   },
   init() {
     return {
@@ -18,6 +19,10 @@ module.exports = {
       },
 
       revokeAlias(_alias: string, cb: Callback) {
+        cb(new Error('not implemented on the client'));
+      },
+
+      metadata(cb: Callback) {
         cb(new Error('not implemented on the client'));
       },
     };

@@ -3,12 +3,23 @@ const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
 const Ref = require('ssb-ref');
 import run = require('promisify-tuple');
-import {Callback, ConnectOpts, RoomMetadata, RPC, SSBWithConn} from './types';
+import {Callback, ConnectOpts, RPC, SSBWithConn} from './types';
 import RoomObserver from './room-observer';
 import {FeedId} from 'ssb-typescript';
 import {toTunnelAddress} from './utils';
 
 type Rooms = Map<FeedId, RoomObserver>;
+
+function roomMetadataMuxrpcMissing(err: any) {
+  if (!err) return false;
+  const errString: string =
+    typeof err.message === 'string'
+      ? err.message
+      : typeof err === 'string'
+      ? err
+      : '';
+  return errString.endsWith('not in list of allowed methods');
+}
 
 export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
   const self = {
@@ -23,25 +34,27 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
       pull(
         ssb.conn.hub().listen(),
         pull.filter(({type}: ListenEvent) => type === 'connected'),
-        pull.drain(({address, key, details}: ListenEvent) => {
+        pull.drain(async ({address, key, details}: ListenEvent) => {
           if (!key) return;
           if (rooms.has(key)) return;
           if (!details?.rpc) return;
           if (address.startsWith('tunnel:')) return;
           const rpc: RPC = details.rpc;
-          debug('will try to call tunnel.isRoom() on the peer %s', key);
-          rpc.tunnel.isRoom((err: any, res: any) => {
-            if (err || !res) return;
-            debug('is connected to an actual ssb-room');
-            if (rooms.has(key)) {
-              rooms.get(key)!.cancel();
-              rooms.delete(key);
-            }
-            rooms.set(
-              key,
-              new RoomObserver(ssb, key, address, rpc, res, onConnect),
-            );
-          });
+          debug('will try to call room.metadata() on the peer %s', key);
+          var [err, res] = await run(rpc.room.metadata)();
+          if (roomMetadataMuxrpcMissing(err)) {
+            debug('will try to call tunnel.isRoom() on the peer %s', key);
+            [err, res] = await run(rpc.tunnel.isRoom)();
+            if (!err && res && typeof res === 'object') res._isRoom1 = true;
+          }
+          if (err || !res) return;
+          debug('is connected to an actual ssb-room');
+          if (rooms.has(key)) {
+            rooms.get(key)!.cancel();
+            rooms.delete(key);
+          }
+          const obs = new RoomObserver(ssb, key, address, rpc, res, onConnect);
+          rooms.set(key, obs);
         }),
       );
 

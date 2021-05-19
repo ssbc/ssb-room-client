@@ -4,7 +4,7 @@ const {ROOM_MSADDR, ROOM_ID, BOB_ID} = require('./keys');
 const CreateSSB = require('./sbot');
 
 test('cannot tunnel.connect to bad tunnel address 1', (t) => {
-  let calledIsRoom = false;
+  let calledMetadata = false;
   let calledEndpoints = false;
   let calledClose = false;
   const ssb = CreateSSB((close) => ({
@@ -17,11 +17,16 @@ test('cannot tunnel.connect to bad tunnel address 1', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.tunnel.isRoom got called');
+                    calledMetadata = true;
+                    cb(null, {name: 'foo.com'});
+                  },
+                },
                 tunnel: {
                   isRoom(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
-                    calledIsRoom = true;
-                    cb(null, true);
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
                   },
                   endpoints() {
                     setTimeout(() => {
@@ -29,7 +34,7 @@ test('cannot tunnel.connect to bad tunnel address 1', (t) => {
                         t.pass(err.message);
                         t.match(err.message, /only know\:tunnel\~shs/);
                         ssb.close(() => {
-                          t.true(calledIsRoom);
+                          t.true(calledMetadata);
                           t.true(calledEndpoints);
                           t.true(calledClose);
                           t.end();
@@ -59,7 +64,7 @@ test('cannot tunnel.connect to bad tunnel address 1', (t) => {
 });
 
 test('cannot tunnel.connect to bad tunnel address 2', (t) => {
-  let calledIsRoom = false;
+  let calledMetadata = false;
   let calledEndpoints = false;
   let calledClose = false;
   const ssb = CreateSSB((close) => ({
@@ -72,11 +77,16 @@ test('cannot tunnel.connect to bad tunnel address 2', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.tunnel.isRoom got called');
+                    calledMetadata = true;
+                    cb(null, {name: 'foo.com'});
+                  },
+                },
                 tunnel: {
                   isRoom(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
-                    calledIsRoom = true;
-                    cb(null, true);
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
                   },
                   endpoints() {
                     setTimeout(() => {
@@ -84,7 +94,7 @@ test('cannot tunnel.connect to bad tunnel address 2', (t) => {
                         t.pass(err.message);
                         t.match(err.message, /only know\:tunnel\~shs/);
                         ssb.close(() => {
-                          t.true(calledIsRoom);
+                          t.true(calledMetadata);
                           t.true(calledEndpoints);
                           t.true(calledClose);
                           t.end();
@@ -114,7 +124,7 @@ test('cannot tunnel.connect to bad tunnel address 2', (t) => {
 });
 
 test('cannot tunnel.connect to bad tunnel address 3', (t) => {
-  let calledIsRoom = false;
+  let calledMetadata = false;
   let calledEndpoints = false;
   let calledClose = false;
   const ssb = CreateSSB((close) => ({
@@ -127,11 +137,16 @@ test('cannot tunnel.connect to bad tunnel address 3', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.tunnel.isRoom got called');
+                    calledMetadata = true;
+                    cb(null, {name: 'foo.com'});
+                  },
+                },
                 tunnel: {
                   isRoom(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
-                    calledIsRoom = true;
-                    cb(null, true);
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
                   },
                   endpoints() {
                     setTimeout(() => {
@@ -139,7 +154,7 @@ test('cannot tunnel.connect to bad tunnel address 3', (t) => {
                         t.pass(err.message);
                         t.match(err.message, /only know\:tunnel\~shs/);
                         ssb.close(() => {
-                          t.true(calledIsRoom);
+                          t.true(calledMetadata);
                           t.true(calledEndpoints);
                           t.true(calledClose);
                           t.end();
@@ -169,7 +184,7 @@ test('cannot tunnel.connect to bad tunnel address 3', (t) => {
 });
 
 test('when fails to create tunnel.connect duplex stream', (t) => {
-  let calledIsRoom = false;
+  let calledMetadata = false;
   let calledEndpoints = false;
   let calledConnect = false;
   let calledClose = false;
@@ -183,11 +198,16 @@ test('when fails to create tunnel.connect duplex stream', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.tunnel.isRoom got called');
+                    calledMetadata = true;
+                    cb(null, {name: 'foo.com'});
+                  },
+                },
                 tunnel: {
                   isRoom(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
-                    calledIsRoom = true;
-                    cb(null, true);
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
                   },
                   endpoints() {
                     setTimeout(() => {
@@ -195,7 +215,7 @@ test('when fails to create tunnel.connect duplex stream', (t) => {
                         t.ok(err, 'error, but we expected it');
                         t.match(err.message, /foobar/);
                         ssb.close(() => {
-                          t.true(calledIsRoom);
+                          t.true(calledMetadata);
                           t.true(calledEndpoints);
                           t.true(calledConnect);
                           t.true(calledClose);
@@ -247,12 +267,51 @@ test('bad ConnHub listen event', (t) => {
               rpc: {
                 tunnel: {
                   isRoom(cb) {
+                    calledIsRoom = true;
                     t.fail('should not call isRoom');
                     cb(null, true);
                   },
                   endpoints() {
                     t.fail('should not call endpoints');
                     return pull.empty();
+                  },
+                },
+              },
+            },
+          },
+        ]),
+    }),
+  }));
+
+  setTimeout(() => {
+    t.false(calledIsRoom);
+    ssb.close(() => {
+      t.end();
+    });
+  }, 200);
+});
+
+test('if room.metadata errors, does not try tunnel.isRoom', (t) => {
+  let calledIsRoom = false;
+  const ssb = CreateSSB((close) => ({
+    hub: () => ({
+      listen: () =>
+        pull.values([
+          {
+            type: 'connected',
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
+            details: {
+              rpc: {
+                room: {
+                  metadata(cb) {
+                    cb(new Error('random bad stuff'));
+                  },
+                },
+                tunnel: {
+                  isRoom(cb) {
+                    calledIsRoom = true;
+                    t.fail('should not call isRoom');
                   },
                 },
               },

@@ -24,8 +24,42 @@ test('when connected to a peer, checks if it is a room', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.room.metadata got called');
+                    close(t.end);
+                  },
+                },
+              },
+            },
+          },
+        ]),
+    }),
+  }));
+});
+
+test('if room.metadata is missing, tries tunnel.isRoom', (t) => {
+  CreateSSB((close) => ({
+    hub: () => ({
+      listen: () =>
+        pull.values([
+          {
+            type: 'connected',
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
+            details: {
+              rpc: {
+                room: {
+                  metadata(cb) {
+                    cb(
+                      new Error(
+                        'method:room,metadata is not in list of allowed methods',
+                      ),
+                    );
+                  },
+                },
                 tunnel: {
-                  isRoom: (cb) => {
+                  isRoom(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
                     close(t.end);
                   },
@@ -49,8 +83,8 @@ test('when connected to a non-room, does not call tunnel.endpoints', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
-                tunnel: {
-                  isRoom: (cb) => {
+                room: {
+                  metadata(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
                     cb(null, false);
                     setTimeout(() => {
@@ -58,6 +92,8 @@ test('when connected to a non-room, does not call tunnel.endpoints', (t) => {
                       close(t.end);
                     }, 200);
                   },
+                },
+                tunnel: {
                   endpoints: () => {
                     t.fail('should not call rpc.tunnel.endpoints');
                     return pull.empty();
@@ -113,8 +149,8 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
-                tunnel: {
-                  isRoom: (cb) => {
+                room: {
+                  metadata(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
                     cb(null, {
                       name: 'Foobar Express',
@@ -122,6 +158,8 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
                       features: ['room1', 'alias', 'httpAuth'],
                     });
                   },
+                },
+                tunnel: {
                   endpoints: () => {
                     return pull.empty();
                   },
@@ -145,11 +183,13 @@ test('when connected to a room, calls tunnel.endpoints', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
-                tunnel: {
-                  isRoom: (cb) => {
+                room: {
+                  metadata(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
                     cb(null, true);
                   },
+                },
+                tunnel: {
                   endpoints: () => {
                     t.pass('rpc.tunnel.endpoints got called');
                     close(t.end);
@@ -186,11 +226,13 @@ test('stages other endpoints', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
-                tunnel: {
-                  isRoom: (cb) => {
+                room: {
+                  metadata(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
                     cb(null, true);
                   },
+                },
+                tunnel: {
                   endpoints: () => {
                     t.pass('rpc.tunnel.endpoints got called');
                     return pull.values([[BOB_ID]]);
@@ -219,12 +261,14 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
-                tunnel: {
-                  isRoom(cb) {
+                room: {
+                  metadata(cb) {
                     t.pass('rpc.tunnel.isRoom got called');
                     calledIsRoom = true;
                     cb(null, true);
                   },
+                },
+                tunnel: {
                   endpoints() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
@@ -278,8 +322,14 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
             details: {
               rpc: {
                 tunnel: {
-                  isRoom(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                  endpoints: () => {
+                    return pull.empty();
+                  },
+                },
+
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.room.metadata got called');
                     calledIsRoom = true;
                     cb(null, true);
 
@@ -304,12 +354,6 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
                       );
                     }, 200);
                   },
-                  endpoints: () => {
-                    return pull.empty();
-                  },
-                },
-
-                room: {
                   registerAlias(alias, sig, cb) {
                     t.equal(alias, 'Alice');
                     t.ok(sig);
@@ -348,17 +392,19 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
 
   function onConnectedToRoom(cb) {
     const roomRpc = {
+      room: {
+        metadata(cb) {
+          t.pass('rpc.tunnel.isRoom got called');
+          calledIsRoom = true;
+          cb(null, true);
+        },
+      },
       tunnel: {
         connect({portal, target, origin}, cb) {
           t.true(calledIsRoom);
           t.equal(portal, ROOM_ID);
           t.equal(target, BOB_ID);
           t.equal(origin, ALICE_ID);
-        },
-        isRoom(cb) {
-          t.pass('rpc.tunnel.isRoom got called');
-          calledIsRoom = true;
-          cb(null, true);
         },
         endpoints: () => {
           return pull.empty();
@@ -452,17 +498,19 @@ test('can consumeAliasUri given an SSB URI', (t) => {
 
   function onConnectedToRoom(cb) {
     const roomRpc = {
+      room: {
+        metadata(cb) {
+          t.pass('rpc.tunnel.isRoom got called');
+          calledIsRoom = true;
+          cb(null, true);
+        },
+      },
       tunnel: {
         connect({portal, target, origin}, cb) {
           t.true(calledIsRoom);
           t.equal(portal, ROOM_ID);
           t.equal(target, BOB_ID);
           t.equal(origin, ALICE_ID);
-        },
-        isRoom(cb) {
-          t.pass('rpc.tunnel.isRoom got called');
-          calledIsRoom = true;
-          cb(null, true);
         },
         endpoints: () => {
           return pull.empty();
