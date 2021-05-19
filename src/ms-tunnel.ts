@@ -6,20 +6,9 @@ import run = require('promisify-tuple');
 import {Callback, ConnectOpts, RPC, SSBWithConn} from './types';
 import RoomObserver from './room-observer';
 import {FeedId} from 'ssb-typescript';
-import {toTunnelAddress} from './utils';
+import {muxrpcMissing, toTunnelAddress} from './utils';
 
 type Rooms = Map<FeedId, RoomObserver>;
-
-function roomMetadataMuxrpcMissing(err: any) {
-  if (!err) return false;
-  const errString: string =
-    typeof err.message === 'string'
-      ? err.message
-      : typeof err === 'string'
-      ? err
-      : '';
-  return errString.endsWith('not in list of allowed methods');
-}
 
 export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
   const self = {
@@ -42,7 +31,7 @@ export default (rooms: Rooms, ssb: SSBWithConn) => (msConfig: any) => {
           const rpc: RPC = details.rpc;
           debug('will try to call room.metadata() on the peer %s', key);
           var [err, res] = await run(rpc.room.metadata)();
-          if (roomMetadataMuxrpcMissing(err)) {
+          if (muxrpcMissing(err)) {
             debug('will try to call tunnel.isRoom() on the peer %s', key);
             [err, res] = await run(rpc.tunnel.isRoom)();
             if (!err && res && typeof res === 'object') res._isRoom1 = true;

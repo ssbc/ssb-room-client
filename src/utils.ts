@@ -25,3 +25,14 @@ export function toTunnelAddress(portal: FeedId, target: FeedId): string {
   const shs = target.slice(1, -8);
   return `tunnel:${portal}:${target}~shs:${shs}`;
 }
+
+export function muxrpcMissing(err: any) {
+  if (!err) return false;
+  const errString: string =
+    typeof err.message === 'string'
+      ? err.message
+      : typeof err === 'string'
+      ? err
+      : '';
+  return errString.endsWith('not in list of allowed methods');
+}
