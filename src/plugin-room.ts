@@ -1,3 +1,5 @@
+import {Callback} from './types';
+
 /**
  * The sole purpose of this plugin is to declare the remote manifest,
  * nothing else.
@@ -10,6 +12,14 @@ module.exports = {
     revokeAlias: 'async',
   },
   init() {
-    return {};
+    return {
+      registerAlias(_alias: string, _sig: string, cb: Callback) {
+        cb(new Error('not implemented on the client'));
+      },
+
+      revokeAlias(_alias: string, cb: Callback) {
+        cb(new Error('not implemented on the client'));
+      },
+    };
   },
 };
