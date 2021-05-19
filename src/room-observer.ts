@@ -1,5 +1,6 @@
 import {FeedId} from 'ssb-typescript';
-import {RoomMetadata, RPC, SSB} from './types';
+import {AttendantsEvent, RoomMetadata, RPC, SSB} from './types';
+import {muxrpcMissing} from './utils';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
 
@@ -32,6 +33,8 @@ export default class RoomObserver {
   private readonly roomKey: FeedId;
   private readonly address: string;
   private readonly roomMetadata: boolean | RoomMetadata;
+  private attendants: Set<FeedId>;
+  private attendantsDrain?: {abort: () => void};
   private endpointsDrain?: {abort: () => void};
 
   constructor(
@@ -47,6 +50,7 @@ export default class RoomObserver {
     this.address = address;
     this.rpc = rpc;
     this.roomMetadata = roomMetadata;
+    this.attendants = new Set();
     this.handler = (stream: any, id: FeedId) => {
       stream.address = `tunnel:${this.roomKey}:${id}`;
       debug(
@@ -78,6 +82,20 @@ export default class RoomObserver {
     }
 
     debug('announcing to portal: %s', this.roomKey);
+    this.startAttendants();
+  }
+
+  private startAttendants() {
+    pull(
+      this.rpc.room.attendants(),
+      (this.attendantsDrain = pull.drain(
+        this.attendantsUpdated,
+        this.attendantsEnded,
+      )),
+    );
+  }
+
+  private startEndpoints() {
     pull(
       this.rpc.tunnel.endpoints(),
       (this.endpointsDrain = pull.drain(
@@ -85,6 +103,97 @@ export default class RoomObserver {
         this.endpointsEnded,
       )),
     );
+  }
+
+  private attendantsUpdated = (event: AttendantsEvent) => {
+    const room = this.roomKey;
+    const roomName =
+      typeof this.roomMetadata === 'object' ? this.roomMetadata.name : void 0;
+
+    // debug log
+    if (event.type === 'state') {
+      debug('initial attendants in %s: %s', room, JSON.stringify(event.ids));
+    } else if (event.type === 'joined') {
+      debug('attendant joined %s: %s', room, event.id);
+    } else if (event.type === 'left') {
+      debug('attendant left %s: %s', room, event.id);
+    }
+
+    // Update attendants set
+    if (event.type === 'state') {
+      this.attendants.clear();
+      for (const key of event.ids) {
+        this.attendants.add(key);
+      }
+    } else if (event.type === 'joined') {
+      this.attendants.add(event.id);
+    } else if (event.type === 'left') {
+      this.attendants.delete(event.id);
+    }
+
+    // Update onlineCount metadata for this room
+    const onlineCount = this.attendants.size;
+    this.ssb.conn.hub().update(this.address, {onlineCount});
+
+    // Update ssb-conn-staging
+    if (event.type === 'state') {
+      for (const id of event.ids) {
+        this.stageNewAttendant(id, room, roomName);
+      }
+    } else if (event.type === 'joined') {
+      this.stageNewAttendant(event.id, room, roomName);
+    } else if (event.type === 'left') {
+      const address = this.getAddress(event.id);
+      debug('will conn.unstage("%s")', address);
+      this.ssb.conn.unstage(address);
+    }
+  };
+
+  private attendantsEnded = (err?: Error | true) => {
+    if (err && err !== true) {
+      // If room.attendants() is not supported, call tunnel.endpoints()
+      if (muxrpcMissing(err)) {
+        this.attendantsDrain = void 0;
+        this.startEndpoints();
+        return;
+      }
+
+      this.handleStreamError(err);
+    }
+  };
+
+  private stageNewAttendant(key: FeedId, room: FeedId, roomName?: string) {
+    if (key === room) return;
+    if (key === this.ssb.id) return;
+    if (this.isAlreadyConnected(key)) return;
+    const address = this.getAddress(key);
+    debug('will conn.stage("%s")', address);
+    this.ssb.conn.stage(address, {
+      type: 'room-attendant',
+      key,
+      room,
+      roomName,
+    });
+  }
+
+  private handleStreamError(err: Error) {
+    const msg = err.message;
+    if (msg in STREAM_ERRORS) {
+      debug(`error getting updates from room ${this.roomKey} because ${msg}`);
+      if (msg in BENIGN_STREAM_END) {
+        if (err instanceof Error) {
+          // stream closed okay locally
+        } else {
+          // pre-emptively destroy the stream, assuming the other
+          // end is packet-stream 2.0.0 sending end messages.
+          this.close();
+        }
+      }
+    } else {
+      console.error(
+        `error getting updates from room ${this.roomKey} because ${msg}`,
+      );
+    }
   }
 
   private endpointsUpdated = (endpoints: Array<FeedId>) => {
@@ -108,39 +217,13 @@ export default class RoomObserver {
 
     // Stage all the new endpoints
     for (const key of endpoints) {
-      if (key === room) continue;
-      if (key === this.ssb.id) continue;
-      if (this.isAlreadyConnected(key)) continue;
-      const address = this.getAddress(key);
-      debug('will conn.stage("%s")', address);
-      this.ssb.conn.stage(address, {
-        type: 'room-endpoint',
-        key,
-        room,
-        roomName,
-      });
+      this.stageNewAttendant(key, room, roomName);
     }
   };
 
   private endpointsEnded = (err?: Error | true) => {
     if (err && err !== true) {
-      const msg = err.message;
-      if (msg in STREAM_ERRORS) {
-        debug(`error getting updates from room ${this.roomKey} because ${msg}`);
-        if (msg in BENIGN_STREAM_END) {
-          if (err instanceof Error) {
-            // stream closed okay locally
-          } else {
-            // pre-emptively destroy the stream, assuming the other
-            // end is packet-stream 2.0.0 sending end messages.
-            this.close();
-          }
-        }
-      } else {
-        console.error(
-          `error getting updates from room ${this.roomKey} because ${msg}`,
-        );
-      }
+      this.handleStreamError(err);
     }
   };
 
@@ -161,6 +244,7 @@ export default class RoomObserver {
    * underlying connections.
    */
   public cancel() {
+    this.attendantsDrain?.abort();
     this.endpointsDrain?.abort();
   }
 
@@ -168,7 +252,12 @@ export default class RoomObserver {
    * Similar to cancel(), but also closes connection with the room server.
    */
   public close() {
+    this.attendantsDrain?.abort();
     this.endpointsDrain?.abort();
+    for (const key of this.attendants) {
+      const address = this.getAddress(key);
+      this.ssb.conn.unstage(address);
+    }
     for (const [addr, data] of this.ssb.conn.staging().entries()) {
       if (data.room === this.roomKey) {
         this.ssb.conn.unstage(addr);

@@ -149,7 +149,7 @@ module.exports = {
         return;
       }
       ssb.conn.remember(tunnelAddr, {
-        type: 'room-endpoint',
+        type: 'room-attendant',
         key: userId,
         room: roomId,
         roomAddress,

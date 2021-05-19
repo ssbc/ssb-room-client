@@ -72,7 +72,7 @@ test('if room.metadata is missing, tries tunnel.isRoom', (t) => {
   }));
 });
 
-test('when connected to a non-room, does not call tunnel.endpoints', (t) => {
+test('when connected to a non-room, does not call room.attendants', (t) => {
   CreateSSB((close) => ({
     hub: () => ({
       listen: () =>
@@ -85,12 +85,16 @@ test('when connected to a non-room, does not call tunnel.endpoints', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     cb(null, false);
                     setTimeout(() => {
-                      t.pass('did not call rpc.tunnel.endpoints');
+                      t.pass('did not call rpc.room.attendants');
                       close(t.end);
                     }, 200);
+                  },
+                  attendants() {
+                    t.fail('should not call rpc.room.attendants');
+                    return pull.empty();
                   },
                 },
                 tunnel: {
@@ -151,19 +155,18 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     cb(null, {
                       name: 'Foobar Express',
                       membership: true,
                       features: ['room1', 'alias', 'httpAuth'],
                     });
                   },
-                },
-                tunnel: {
-                  endpoints: () => {
+                  attendants() {
                     return pull.empty();
                   },
                 },
+                tunnel: {},
               },
             },
           },
@@ -172,7 +175,7 @@ test('when connected to a room, updates hub and db with metadata', (t) => {
   }));
 });
 
-test('when connected to a room, calls tunnel.endpoints', (t) => {
+test('when connected to a room, calls room.attendants', (t) => {
   CreateSSB((close) => ({
     hub: () => ({
       listen: () =>
@@ -185,8 +188,53 @@ test('when connected to a room, calls tunnel.endpoints', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     cb(null, true);
+                  },
+                  attendants: () => {
+                    t.pass('rpc.room.attendants got called');
+                    close(t.end);
+                    return pull.empty();
+                  },
+                },
+                tunnel: {
+                  endpoints: () => {
+                    t.fail(
+                      'dont call tunnel.endpoints if room.attendants exists',
+                    );
+                    return pull.error(new Error());
+                  },
+                },
+              },
+            },
+          },
+        ]),
+    }),
+  }));
+});
+
+test('if room.attendants is missing, tries tunnel.endpoints', (t) => {
+  CreateSSB((close) => ({
+    hub: () => ({
+      listen: () =>
+        pull.values([
+          {
+            type: 'connected',
+            address: ROOM_MSADDR,
+            key: ROOM_ID,
+            details: {
+              rpc: {
+                room: {
+                  metadata(cb) {
+                    t.pass('rpc.room.metadata got called');
+                    cb(null, true);
+                  },
+                  attendants: () => {
+                    return pull.error(
+                      new Error(
+                        'method:room,attendants is not in list of allowed methods',
+                      ),
+                    );
                   },
                 },
                 tunnel: {
@@ -210,7 +258,7 @@ test('stages other endpoints', (t) => {
       const BOB_SHS = BOB_ID.slice(1, -8);
       t.equal(addr, `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_SHS}`);
       t.deepEqual(data, {
-        type: 'room-endpoint',
+        type: 'room-attendant',
         key: BOB_ID,
         room: ROOM_ID,
         roomName: undefined,
@@ -228,16 +276,15 @@ test('stages other endpoints', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     cb(null, true);
                   },
-                },
-                tunnel: {
-                  endpoints: () => {
-                    t.pass('rpc.tunnel.endpoints got called');
-                    return pull.values([[BOB_ID]]);
+                  attendants: () => {
+                    t.pass('rpc.room.attendants got called');
+                    return pull.values([{type: 'state', ids: [BOB_ID]}]);
                   },
                 },
+                tunnel: {},
               },
             },
           },
@@ -247,8 +294,8 @@ test('stages other endpoints', (t) => {
 });
 
 test('when connected to a room, can tunnel.connect to others', (t) => {
-  let calledIsRoom = false;
-  let calledEndpoints = false;
+  let calledMetadata = false;
+  let calledAttendants = false;
   let calledConnect = false;
   let calledClose = false;
   const ssb = CreateSSB((close) => ({
@@ -263,20 +310,18 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
-                    calledIsRoom = true;
+                    t.pass('rpc.room.metadata got called');
+                    calledMetadata = true;
                     cb(null, true);
                   },
-                },
-                tunnel: {
-                  endpoints() {
+                  attendants() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
                         t.doesNotMatch(err.message, /only know\:tunnel\~shs/);
                         t.ok(err, 'error, but we expected it because mocks');
                         ssb.close(() => {
-                          t.true(calledIsRoom);
-                          t.true(calledEndpoints);
+                          t.true(calledMetadata);
+                          t.true(calledAttendants);
                           t.true(calledConnect);
                           t.true(calledClose);
                           t.end();
@@ -284,10 +329,12 @@ test('when connected to a room, can tunnel.connect to others', (t) => {
                       });
                     }, 200);
 
-                    t.pass('rpc.tunnel.endpoints got called');
-                    calledEndpoints = true;
-                    return pull.values([[BOB_ID]]);
+                    t.pass('rpc.room.attendants got called');
+                    calledAttendants = true;
+                    return pull.values([{type: 'state', ids: [BOB_ID]}]);
                   },
+                },
+                tunnel: {
                   connect(addr) {
                     t.deepEqual(addr, {
                       portal: ROOM_ID,
@@ -321,16 +368,11 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
             key: ROOM_ID,
             details: {
               rpc: {
-                tunnel: {
-                  endpoints: () => {
-                    return pull.empty();
-                  },
-                },
+                tunnel: {},
 
                 room: {
                   metadata(cb) {
                     t.pass('rpc.room.metadata got called');
-                    calledIsRoom = true;
                     cb(null, true);
 
                     setTimeout(() => {
@@ -353,6 +395,9 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
                         },
                       );
                     }, 200);
+                  },
+                  attendants: () => {
+                    return pull.empty();
                   },
                   registerAlias(alias, sig, cb) {
                     t.equal(alias, 'Alice');
@@ -385,7 +430,7 @@ test('when connected to a room 2.0, can registerAlias', (t) => {
 });
 
 test('can consumeAliasUri given an HTTP URL', (t) => {
-  let calledIsRoom = false;
+  let calledMetadata = false;
   const BOB_ADDR = `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`;
   const expectedConnections = [ROOM_MSADDR, BOB_ADDR];
   const hubEvents = Notify();
@@ -394,20 +439,20 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
     const roomRpc = {
       room: {
         metadata(cb) {
-          t.pass('rpc.tunnel.isRoom got called');
-          calledIsRoom = true;
+          t.pass('rpc.room.metadata got called');
+          calledMetadata = true;
           cb(null, true);
+        },
+        attendants: () => {
+          return pull.empty();
         },
       },
       tunnel: {
         connect({portal, target, origin}, cb) {
-          t.true(calledIsRoom);
+          t.true(calledMetadata);
           t.equal(portal, ROOM_ID);
           t.equal(target, BOB_ID);
           t.equal(origin, ALICE_ID);
-        },
-        endpoints: () => {
-          return pull.empty();
         },
       },
     };
@@ -491,7 +536,7 @@ test('can consumeAliasUri given an HTTP URL', (t) => {
 });
 
 test('can consumeAliasUri given an SSB URI', (t) => {
-  let calledIsRoom = false;
+  let calledMetadata = false;
   const BOB_ADDR = `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_ID.slice(1, -8)}`;
   const expectedConnections = [ROOM_MSADDR, BOB_ADDR];
   const hubEvents = Notify();
@@ -500,20 +545,20 @@ test('can consumeAliasUri given an SSB URI', (t) => {
     const roomRpc = {
       room: {
         metadata(cb) {
-          t.pass('rpc.tunnel.isRoom got called');
-          calledIsRoom = true;
+          t.pass('rpc.room.metadata got called');
+          calledMetadata = true;
           cb(null, true);
+        },
+        attendants: () => {
+          return pull.empty();
         },
       },
       tunnel: {
         connect({portal, target, origin}, cb) {
-          t.true(calledIsRoom);
+          t.true(calledMetadata);
           t.equal(portal, ROOM_ID);
           t.equal(target, BOB_ID);
           t.equal(origin, ALICE_ID);
-        },
-        endpoints: () => {
-          return pull.empty();
         },
       },
     };

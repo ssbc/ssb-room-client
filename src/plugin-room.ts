@@ -1,4 +1,5 @@
 import {Callback} from './types';
+const pull = require('pull-stream');
 
 /**
  * The sole purpose of this plugin is to declare the remote manifest,
@@ -11,6 +12,7 @@ module.exports = {
     registerAlias: 'async',
     revokeAlias: 'async',
     metadata: 'async',
+    attendants: 'source',
   },
   init() {
     return {
@@ -24,6 +26,10 @@ module.exports = {
 
       metadata(cb: Callback) {
         cb(new Error('not implemented on the client'));
+      },
+
+      attendants() {
+        return pull.error(new Error('not implemented on the client'));
       },
     };
   },

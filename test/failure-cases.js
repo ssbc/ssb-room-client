@@ -19,16 +19,11 @@ test('cannot tunnel.connect to bad tunnel address 1', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     calledMetadata = true;
                     cb(null, {name: 'foo.com'});
                   },
-                },
-                tunnel: {
-                  isRoom(cb) {
-                    t.fail('dont call tunnel.isRoom if room.metadata exists');
-                  },
-                  endpoints() {
+                  attendants() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:blabla:${BOB_ID}`, (err, s) => {
                         t.pass(err.message);
@@ -42,9 +37,20 @@ test('cannot tunnel.connect to bad tunnel address 1', (t) => {
                       });
                     }, 200);
 
-                    t.pass('rpc.tunnel.endpoints got called');
+                    t.pass('rpc.room.attendants got called');
                     calledEndpoints = true;
-                    return pull.values([[BOB_ID]]);
+                    return pull.values([{type: 'state', ids: [BOB_ID]}]);
+                  },
+                },
+                tunnel: {
+                  isRoom(cb) {
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
+                  },
+                  endpoints() {
+                    t.fail(
+                      'dont call tunnel.endpoints if room.attendants exists',
+                    );
+                    return pull.error(new Error());
                   },
                   connect(addr) {
                     t.fail('remote tunnel.connect should not happen');
@@ -79,16 +85,11 @@ test('cannot tunnel.connect to bad tunnel address 2', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     calledMetadata = true;
                     cb(null, {name: 'foo.com'});
                   },
-                },
-                tunnel: {
-                  isRoom(cb) {
-                    t.fail('dont call tunnel.isRoom if room.metadata exists');
-                  },
-                  endpoints() {
+                  attendants() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:${ROOM_ID}:blabla`, (err, s) => {
                         t.pass(err.message);
@@ -102,9 +103,20 @@ test('cannot tunnel.connect to bad tunnel address 2', (t) => {
                       });
                     }, 200);
 
-                    t.pass('rpc.tunnel.endpoints got called');
+                    t.pass('rpc.room.attendants got called');
                     calledEndpoints = true;
-                    return pull.values([[BOB_ID]]);
+                    return pull.values([{type: 'state', ids: [BOB_ID]}]);
+                  },
+                },
+                tunnel: {
+                  isRoom(cb) {
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
+                  },
+                  endpoints() {
+                    t.fail(
+                      'dont call tunnel.endpoints if room.attendants exists',
+                    );
+                    return pull.error(new Error());
                   },
                   connect(addr) {
                     t.fail('remote tunnel.connect should not happen');
@@ -139,16 +151,11 @@ test('cannot tunnel.connect to bad tunnel address 3', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     calledMetadata = true;
                     cb(null, {name: 'foo.com'});
                   },
-                },
-                tunnel: {
-                  isRoom(cb) {
-                    t.fail('dont call tunnel.isRoom if room.metadata exists');
-                  },
-                  endpoints() {
+                  attendants() {
                     setTimeout(() => {
                       ssb.connect(`tonel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
                         t.pass(err.message);
@@ -162,9 +169,20 @@ test('cannot tunnel.connect to bad tunnel address 3', (t) => {
                       });
                     }, 200);
 
-                    t.pass('rpc.tunnel.endpoints got called');
+                    t.pass('rpc.room.attendants got called');
                     calledEndpoints = true;
-                    return pull.values([[BOB_ID]]);
+                    return pull.values([{type: 'state', ids: [BOB_ID]}]);
+                  },
+                },
+                tunnel: {
+                  isRoom(cb) {
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
+                  },
+                  endpoints() {
+                    t.fail(
+                      'dont call tunnel.endpoints if room.attendants exists',
+                    );
+                    return pull.error(new Error());
                   },
                   connect(addr) {
                     t.fail('remote tunnel.connect should not happen');
@@ -200,16 +218,11 @@ test('when fails to create tunnel.connect duplex stream', (t) => {
               rpc: {
                 room: {
                   metadata(cb) {
-                    t.pass('rpc.tunnel.isRoom got called');
+                    t.pass('rpc.room.metadata got called');
                     calledMetadata = true;
                     cb(null, {name: 'foo.com'});
                   },
-                },
-                tunnel: {
-                  isRoom(cb) {
-                    t.fail('dont call tunnel.isRoom if room.metadata exists');
-                  },
-                  endpoints() {
+                  attendants() {
                     setTimeout(() => {
                       ssb.connect(`tunnel:${ROOM_ID}:${BOB_ID}`, (err, s) => {
                         t.ok(err, 'error, but we expected it');
@@ -224,9 +237,20 @@ test('when fails to create tunnel.connect duplex stream', (t) => {
                       });
                     }, 200);
 
-                    t.pass('rpc.tunnel.endpoints got called');
+                    t.pass('rpc.room.attendants got called');
                     calledEndpoints = true;
-                    return pull.values([[BOB_ID]]);
+                    return pull.values([{type: 'state', ids: [BOB_ID]}]);
+                  },
+                },
+                tunnel: {
+                  isRoom(cb) {
+                    t.fail('dont call tunnel.isRoom if room.metadata exists');
+                  },
+                  endpoints() {
+                    t.fail(
+                      'dont call tunnel.endpoints if room.attendants exists',
+                    );
+                    return pull.error(new Error());
                   },
                   connect(addr) {
                     t.deepEqual(addr, {
@@ -265,14 +289,25 @@ test('bad ConnHub listen event', (t) => {
             // key: ROOM_ID, // left out on purpose
             details: {
               rpc: {
+                room: {
+                  metadata(cb) {
+                    calledIsRoom = true;
+                    t.fail('should not call rpc.room.metadata');
+                    cb(null, true);
+                  },
+                  attendants() {
+                    t.fail('should not call rpc.room.attendants');
+                    return pull.empty();
+                  },
+                },
                 tunnel: {
                   isRoom(cb) {
                     calledIsRoom = true;
-                    t.fail('should not call isRoom');
+                    t.fail('should not call rpc.tunnel.isRoom');
                     cb(null, true);
                   },
                   endpoints() {
-                    t.fail('should not call endpoints');
+                    t.fail('should not call rpc.tunnel.endpoints');
                     return pull.empty();
                   },
                 },

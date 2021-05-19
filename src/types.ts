@@ -70,8 +70,19 @@ export interface RPC {
     registerAlias: (alias: string, sig: string, cb: Callback) => void;
     revokeAlias: (alias: string, cb: Callback) => void;
     metadata: (cb: Callback<RoomMetadata | boolean>) => void;
+    attendants: () => CallableFunction;
   };
 }
+
+export type AttendantsEvent =
+  | {
+      type: 'joined' | 'left';
+      id: FeedId;
+    }
+  | {
+      type: 'state';
+      ids: Array<FeedId>;
+    };
 
 export interface SSBConfig {
   path: string;
