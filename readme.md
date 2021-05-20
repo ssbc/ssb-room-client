@@ -2,7 +2,7 @@
 
 Plugin to accept interact with SSB room servers. This is supposed to be installed and used on **apps** that make remote calls to servers, thus _clients_.
 
-Note, some rooms may have additional features such as Sign-in with SSB and HTTP invites, so it may be worth installing also [ssb-http-auth-client](https://github.com/staltz/ssb-http-auth-client) and [ssb-http-invite-client](https://github.com/staltz/ssb-http-invite-client).
+Note, some rooms may have additional features such as Sign-in with SSB and HTTP invites, so it may be worth installing also [ssb-http-auth-client](https://github.com/ssb-ngi-pointer/ssb-http-auth-client) and [ssb-http-invite-client](https://github.com/ssb-ngi-pointer/ssb-http-invite-client).
 
 ## Installation
 
