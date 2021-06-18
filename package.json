@@ -20,7 +20,7 @@
     "ssb-conn-hub": ">=0.2.0",
     "ssb-conn-staging": ">=0.1.0",
     "ssb-keys": ">=8.1.0",
-    "ssb-network-errors": "^0.4.0",
+    "ssb-network-errors": "^1.0.0",
     "ssb-ref": "^2.14.3",
     "ssb-typescript": "^2.2.0"
   },
