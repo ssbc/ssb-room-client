@@ -3,28 +3,7 @@ import {AttendantsEvent, RoomMetadata, RPC, SSB} from './types';
 import {muxrpcMissing} from './utils';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');
-
-const BENIGN_STREAM_END = {
-  // stream closed okay, ssb-js variant
-  'unexpected end of parent stream': true,
-
-  // stream closed okay, go-ssb variant
-  'muxrpc: session terminated': true,
-};
-
-// FIXME: this should be in muxrpc or packet-stream or somewhere generic
-const STREAM_ERRORS = {
-  ...BENIGN_STREAM_END,
-  'unexpected hangup': true, // stream closed probably okay
-  'read EHOSTUNREACH': true,
-  'read ECONNRESET': true,
-  'read ENETDOWN': true,
-  'read ETIMEDOUT': true,
-  'write ECONNRESET': true,
-  'write EPIPE': true,
-  'stream is closed': true, // rpc method called after stream ended
-  'parent stream is closing': true,
-};
+const getSeverity = require('ssb-network-errors');
 
 export default class RoomObserver {
   public readonly rpc: RPC;
@@ -70,7 +49,7 @@ export default class RoomObserver {
       const {name, membership, features, _isRoom1} = this.roomMetadata;
       if (name) metadata.name = name;
       if (membership) metadata.membership = true;
-      if (_isRoom1) metadata.openInvites = true
+      if (_isRoom1) metadata.openInvites = true;
       if (Array.isArray(features)) {
         if (features.includes('room1')) metadata.openInvites = true;
         if (features.includes('room2')) metadata.supportsRoom2 = true;
@@ -178,21 +157,14 @@ export default class RoomObserver {
   }
 
   private handleStreamError(err: Error) {
-    const msg = err.message;
-    if (msg in STREAM_ERRORS) {
-      debug(`error getting updates from room ${this.roomKey} because ${msg}`);
-      if (msg in BENIGN_STREAM_END) {
-        if (err instanceof Error) {
-          // stream closed okay locally
-        } else {
-          // pre-emptively destroy the stream, assuming the other
-          // end is packet-stream 2.0.0 sending end messages.
-          this.close();
-        }
-      }
-    } else {
+    const severity = getSeverity(err);
+    if (severity === 1) {
+      // pre-emptively destroy the stream, assuming the other
+      // end is packet-stream 2.0.0 sending end messages.
+      this.close();
+    } else if (severity >= 2) {
       console.error(
-        `error getting updates from room ${this.roomKey} because ${msg}`,
+        `error getting updates from room ${this.roomKey} because ${err.message}`,
       );
     }
   }
