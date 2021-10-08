@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Andre Staltz
+//
+// SPDX-License-Identifier: Unlicense
+
 const test = require('tape');
 const pull = require('pull-stream');
 const {ROOM_MSADDR, ROOM_ID, BOB_ID} = require('./keys');

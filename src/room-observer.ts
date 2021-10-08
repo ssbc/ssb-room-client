@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Andre Staltz
+//
+// SPDX-License-Identifier: LGPL-3.0-only
+
 import {FeedId} from 'ssb-typescript';
 import {AttendantsEvent, RoomMetadata, RPC, SSB} from './types';
 import {muxrpcMissing} from './utils';

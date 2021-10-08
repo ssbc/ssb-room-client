@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Andre Staltz
+//
+// SPDX-License-Identifier: LGPL-3.0-only
+
 import {ListenEvent} from 'ssb-conn-hub/lib/types';
 const debug = require('debug')('ssb:room-client');
 const pull = require('pull-stream');

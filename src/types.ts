@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Andre Staltz
+//
+// SPDX-License-Identifier: LGPL-3.0-only
+
 import {AddressData} from 'ssb-conn-db/lib/types';
 import {ConnectionData} from 'ssb-conn-hub/lib/types';
 import {StagedData} from 'ssb-conn-staging/lib/types';

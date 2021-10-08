@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Andre Staltz
+//
+// SPDX-License-Identifier: Unlicense
+
 const test = require('tape');
 const ssbKeys = require('ssb-keys');
 const server = require('server');

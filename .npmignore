@@ -1,7 +1,0 @@
-/.github
-/.nyc_output
-/src
-/test
-node_modules
-pnpm-lock.yaml
-tsconfig.json

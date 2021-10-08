@@ -5,6 +5,11 @@
   "homepage": "https://github.com/ssb-ngi-pointer/ssb-room-client",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib/*",
+    "package.json.license",
+    "LICENSES/*"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/ssb-ngi-pointer/ssb-room-client.git"

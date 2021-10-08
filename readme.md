@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2021 Andre Staltz
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # ssb-room-client
 
 Plugin to accept interact with SSB room servers. This is supposed to be installed and used on **apps** that make remote calls to servers, thus _clients_.
