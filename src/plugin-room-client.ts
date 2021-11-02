@@ -127,8 +127,10 @@ module.exports = {
         }
       }
 
-      // Detect what kind of room is this, ephemeral or not
-      const isForeignRoom = !ssb.conn.db().get(roomAddress);
+      // Detect what kind of room is this, foreign or not
+      const roomData = ssb.conn.db().get(roomAddress);
+      const haveMembershipHere = roomData?.membership;
+      const isForeignRoom = !roomData;
       let connectedToOtherAttendants = false;
       for (const [, data] of ssb.conn.hub().entries()) {
         if (data.room === roomId) {
@@ -152,14 +154,17 @@ module.exports = {
         }
         return;
       }
-      ssb.conn.remember(tunnelAddr, {
-        type: 'room-attendant',
-        key: userId,
-        room: roomId,
-        roomAddress,
-        alias,
-        autoconnect: true,
-      });
+      // Only store this tunnel address if we're not a member
+      if (!haveMembershipHere) {
+        ssb.conn.remember(tunnelAddr, {
+          type: 'room-attendant',
+          key: userId,
+          room: roomId,
+          roomAddress,
+          alias,
+          autoconnect: true,
+        });
+      }
       cb(null, aliasRpc);
     }
 
