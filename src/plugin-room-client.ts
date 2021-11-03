@@ -334,18 +334,25 @@ module.exports = {
       roomRPC.room.revokeAlias(alias, cb);
     }
 
+    // Setup discoveredAttendants source pull-stream
     const _notifyDiscoveredAttendant = Notify();
-
     function discoveredAttendants() {
       return _notifyDiscoveredAttendant.listen();
     }
+    ssb.close.hook(function (this: any, fn: any, args: any) {
+      _notifyDiscoveredAttendant?.end();
+      fn.apply(this, args);
+    });
 
     return {
-      _notifyDiscoveredAttendant,
+      // Public API
       discoveredAttendants,
       consumeAliasUri,
       registerAlias,
       revokeAlias,
+
+      // underscore so other modules IN THIS LIBRARY can use it
+      _notifyDiscoveredAttendant,
     };
   },
 };

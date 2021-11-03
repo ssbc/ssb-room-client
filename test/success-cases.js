@@ -285,22 +285,22 @@ test('emits attendants into discoveredAttendants() stream', (t) => {
     }),
   }));
 
-    pull(
-      ssb.roomClient.discoveredAttendants(),
-      pull.drain((data) => {
-        t.ok(data.address, 'has address');
-        t.ok(data.key, 'has key');
-        t.ok(data.room, 'has room');
+  pull(
+    ssb.roomClient.discoveredAttendants(),
+    pull.drain((data) => {
+      t.ok(data.address, 'has address');
+      t.ok(data.key, 'has key');
+      t.ok(data.room, 'has room');
 
-        const BOB_SHS = BOB_ID.slice(1, -8);
-        t.equal(data.address, `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_SHS}`);
-        t.equal(data.key, BOB_ID, "bob's id");
-        t.equal(data.room, ROOM_ID, "room's id");
-        ssb.close(() => {
-          t.end();
-        });
-      }),
-    );
+      const BOB_SHS = BOB_ID.slice(1, -8);
+      t.equal(data.address, `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_SHS}`);
+      t.equal(data.key, BOB_ID, "bob's id");
+      t.equal(data.room, ROOM_ID, "room's id");
+      ssb.close(() => {
+        t.end();
+      });
+    }),
+  );
 });
 
 test('when connected to a room, can tunnel.connect to others', (t) => {

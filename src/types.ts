@@ -34,6 +34,7 @@ export interface RoomMetadata {
 export interface SSB {
   id: FeedId;
   keys: any;
+  close: any;
   conn?: {
     connect: (msaddr: string, cb: Callback<RPC>) => void;
     disconnect: CallableFunction;
