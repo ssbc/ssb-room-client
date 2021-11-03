@@ -256,19 +256,8 @@ test('if room.attendants is missing, tries tunnel.endpoints', (t) => {
   }));
 });
 
-test('stages other endpoints', (t) => {
-  CreateSSB((close) => ({
-    stage: (addr, data) => {
-      const BOB_SHS = BOB_ID.slice(1, -8);
-      t.equal(addr, `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_SHS}`);
-      t.deepEqual(data, {
-        type: 'room-attendant',
-        key: BOB_ID,
-        room: ROOM_ID,
-        roomName: undefined,
-      });
-      close(t.end);
-    },
+test('emits attendants into discoveredAttendants() stream', (t) => {
+  const ssb = CreateSSB((close) => ({
     hub: () => ({
       listen: () =>
         pull.values([
@@ -295,6 +284,23 @@ test('stages other endpoints', (t) => {
         ]),
     }),
   }));
+
+    pull(
+      ssb.roomClient.discoveredAttendants(),
+      pull.drain((data) => {
+        t.ok(data.address, 'has address');
+        t.ok(data.key, 'has key');
+        t.ok(data.room, 'has room');
+
+        const BOB_SHS = BOB_ID.slice(1, -8);
+        t.equal(data.address, `tunnel:${ROOM_ID}:${BOB_ID}~shs:${BOB_SHS}`);
+        t.equal(data.key, BOB_ID, "bob's id");
+        t.equal(data.room, ROOM_ID, "room's id");
+        ssb.close(() => {
+          t.end();
+        });
+      }),
+    );
 });
 
 test('when connected to a room, can tunnel.connect to others', (t) => {

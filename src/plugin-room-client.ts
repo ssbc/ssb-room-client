@@ -5,6 +5,7 @@
 import {FeedId} from 'ssb-typescript';
 const Ref = require('ssb-ref');
 const ssbKeys = require('ssb-keys');
+const Notify = require('pull-notify');
 import RoomObserver from './room-observer';
 import run = require('promisify-tuple');
 import {Callback, RPC, SSBConfig, SSBWithConn} from './types';
@@ -43,6 +44,7 @@ module.exports = {
   name: 'roomClient',
   version: '1.0.0',
   manifest: {
+    discoveredAttendants: 'source',
     consumeAliasUri: 'async',
     registerAlias: 'async',
     revokeAlias: 'async',
@@ -332,7 +334,15 @@ module.exports = {
       roomRPC.room.revokeAlias(alias, cb);
     }
 
+    const _notifyDiscoveredAttendant = Notify();
+
+    function discoveredAttendants() {
+      return _notifyDiscoveredAttendant.listen();
+    }
+
     return {
+      _notifyDiscoveredAttendant,
+      discoveredAttendants,
       consumeAliasUri,
       registerAlias,
       revokeAlias,

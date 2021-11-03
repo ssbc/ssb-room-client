@@ -93,6 +93,8 @@ Registers an alias at the room server known by `roomId`
 
 Apart from that, you just use SSB CONN's APIs to connect with Rooms and the peers online in a Room.
 
+There is one more muxrpc API, `discoveredAttendants()` which returns a `pull-stream` source of all room attendants discovered, but this API is sort of internal because `ssb-conn`'s scheduler uses it and you shouldn't have to worry about using this API ever.
+
 If an _Open_ Room (has the same invite code for everyone) gives the user an invite code, then you can use the **following utilities** to extract the [multiserver](https://github.com/ssbc/multiserver) `address` of the Room:
 
 ```js

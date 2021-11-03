@@ -59,6 +59,12 @@ export interface SSB {
   tunnel: {
     getRoomsMap: CallableFunction;
   };
+  roomClient: {
+    consumeAliasUri: CallableFunction;
+    registerAlias: CallableFunction;
+    revokeAlias: CallableFunction;
+    _notifyDiscoveredAttendant: (x: any) => void;
+  };
 }
 
 export type SSBWithConn = SSB & Required<Pick<SSB, 'conn'>>;

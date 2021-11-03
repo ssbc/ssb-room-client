@@ -122,14 +122,15 @@ export default class RoomObserver {
     // Update ssb-conn-staging
     if (event.type === 'state') {
       for (const id of event.ids) {
-        this.stageNewAttendant(id, room, roomName);
+        this.notifyNewAttendant(id, room, roomName);
       }
     } else if (event.type === 'joined') {
-      this.stageNewAttendant(event.id, room, roomName);
+      this.notifyNewAttendant(event.id, room, roomName);
     } else if (event.type === 'left') {
       const address = this.getAddress(event.id);
-      debug('will conn.unstage("%s")', address);
+      debug('will disconnect and unstage %s', address);
       this.ssb.conn.unstage(address);
+      this.ssb.conn.disconnect(address);
     }
   };
 
@@ -146,14 +147,17 @@ export default class RoomObserver {
     }
   };
 
-  private stageNewAttendant(key: FeedId, room: FeedId, roomName?: string) {
+  /**
+   * Typically, this should stage the new attendant, but it's not up to us to
+   * decide that. We just notify other modules (like the ssb-conn scheduler) and
+   * they listen to the notify stream and stage it if they want.
+   */
+  private notifyNewAttendant(key: FeedId, room: FeedId, roomName?: string) {
     if (key === room) return;
     if (key === this.ssb.id) return;
-    if (this.isAlreadyConnected(key)) return;
     const address = this.getAddress(key);
-    debug('will conn.stage("%s")', address);
-    this.ssb.conn.stage(address, {
-      type: 'room-attendant',
+    this.ssb.roomClient._notifyDiscoveredAttendant({
+      address,
       key,
       room,
       roomName,
@@ -187,14 +191,15 @@ export default class RoomObserver {
     for (const entry of this.ssb.conn.staging().entries()) {
       const [addr, data] = entry;
       if (data.room === room && data.key && !endpoints.includes(data.key)) {
-        debug('will conn.unstage("%s")', addr);
+        debug('will disconnect and unstage %s', addr);
         this.ssb.conn.unstage(addr);
+        this.ssb.conn.disconnect(addr);
       }
     }
 
     // Stage all the new endpoints
     for (const key of endpoints) {
-      this.stageNewAttendant(key, room, roomName);
+      this.notifyNewAttendant(key, room, roomName);
     }
   };
 
@@ -203,13 +208,6 @@ export default class RoomObserver {
       this.handleStreamError(err);
     }
   };
-
-  private isAlreadyConnected(key: FeedId) {
-    for (const [, data] of this.ssb.conn.hub().entries()) {
-      if (data.key === key) return true;
-    }
-    return false;
-  }
 
   private getAddress(key: FeedId) {
     const shs = key.substr(1, key.length - 9);
