@@ -46,12 +46,13 @@ module.exports = {
       connect(opts: ConnectOpts) {
         if (!opts) return ErrorDuplex('opts *must* be provided');
         debug('received incoming tunnel.connect(%o)', opts);
-        const {target, portal, origin} = opts;
-        if (target === ssb.id && rooms.has(portal)) {
+        const {target, origin} = opts;
+        const portal = (this as any).id;
+        if (target === ssb.id && rooms.has(portal) && origin) {
           debug('connect() will resolve because handler exists');
           const handler = rooms.get(portal)!.handler;
           const [ins, outs] = DuplexPair();
-          handler(ins, origin ?? (this as any).id);
+          handler(ins, origin);
           return outs;
         } else {
           return ErrorDuplex(`could not connect to ${target}`);
@@ -60,13 +61,13 @@ module.exports = {
 
       // Needed due to https://github.com/ssb-ngi-pointer/ssb-room-client/pull/3#issuecomment-808322434
       ping() {
-        return Date.now()
+        return Date.now();
       },
 
       // Internal method, needed for api-plugin.ts
       getRoomsMap() {
-        return rooms
-      }
+        return rooms;
+      },
     };
   },
 };
