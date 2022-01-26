@@ -5,6 +5,7 @@
 import {FeedId} from 'ssb-typescript';
 const debug = require('debug')('ssb:room-client');
 const DuplexPair = require('pull-pair/duplex');
+const Ref = require('ssb-ref');
 import {ConnectOpts, SSB, SSBWithConn} from './types';
 import ErrorDuplex from './error-duplex';
 import RoomObserver from './room-observer';
@@ -48,11 +49,11 @@ module.exports = {
         debug('received incoming tunnel.connect(%o)', opts);
         const {target, origin} = opts;
         const portal = (this as any).id;
-        if (target === ssb.id && rooms.has(portal) && origin) {
+        if (target === ssb.id && rooms.has(portal) && Ref.isFeed(origin)) {
           debug('connect() will resolve because handler exists');
           const handler = rooms.get(portal)!.handler;
           const [ins, outs] = DuplexPair();
-          handler(ins, origin);
+          handler(ins, origin!);
           return outs;
         } else {
           return ErrorDuplex(`could not connect to ${target}`);
