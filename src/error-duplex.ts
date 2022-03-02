@@ -6,6 +6,7 @@ import {Callback} from './types';
 
 export default function ErrorDuplex(message: string) {
   const err = new Error(message);
+  err.stack = '';
   return {
     source(_abort: any, cb: Callback) {
       cb(err);
